@@ -192,7 +192,7 @@ void init_sdl() {
     // Make this configurable later
     SDL_DisableScreenSaver();
 
-    fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) != 0,
+    fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
 
     fail_if(!(screen =
@@ -252,11 +252,9 @@ void init_sdl() {
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;
 
-    fail_if(!(audio_device_id = SDL_OpenAudioDevice(0, 0, &want, 0, 0)),
-      "failed to initialize audio: %s\n", SDL_GetError());
+    audio_device_id = SDL_OpenAudioDevice(0, 0, &want, 0, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
 
     // Input
-
     // We use SDL_GetKey/MouseState() instead
     SDL_EventState(SDL_KEYDOWN        , SDL_IGNORE);
     SDL_EventState(SDL_KEYUP          , SDL_IGNORE);

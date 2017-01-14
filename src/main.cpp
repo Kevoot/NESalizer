@@ -25,16 +25,7 @@ static int emulation_thread(void*) {
 }
 
 int main(int argc, char *argv[]) {
-    program_name = argv[0] ? argv[0] : "nesalizer";
-#ifndef RUN_TESTS
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s <rom file>\n", program_name);
-        exit(EXIT_FAILURE);
-    }
-#else
-    (void)argc; // Suppress warning
-#endif
-
+ 
     install_fatal_signal_handlers();
 
     // One-time initialization of various components
@@ -43,7 +34,7 @@ int main(int argc, char *argv[]) {
     init_mappers();
 
 #ifndef RUN_TESTS
-    load_rom(argv[1], true);
+    load_rom("mario.nes", true);
 #endif
 
     // Create a separate emulation thread and use this thread as the rendering

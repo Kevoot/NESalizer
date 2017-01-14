@@ -16,7 +16,7 @@ EXTRA             =
 EXTRA_LINK        =
 # "debug", "release", or "release-debug". "release-debug" adds debugging
 # information in addition to optimizing.
-CONF              = debug
+CONF              = release
 # If "1", includes a simple debugger (see cpu.cpp) for internal use. Has
 # readline dependency.
 INCLUDE_DEBUGGER  = 0
@@ -58,7 +58,8 @@ c_objects   = $(addprefix $(BUILD_DIR)/,$(c_sources:=.o))
 objects     = $(c_objects) $(cpp_objects)
 deps        = $(addprefix $(BUILD_DIR)/,$(c_sources:=.d) $(cpp_sources:=.d))
 
-LDLIBS := $(shell sdl2-config --libs) -lrt
+compile_flags := -I$(MARVELL_ROOTFS)/usr/include/SDL2 -DHAVE_OPENGLES2
+LDLIBS :=  -lSDL2 -lSDL2_test -lrt
 
 ifeq ($(INCLUDE_DEBUGGER),1)
     LDLIBS += -lreadline
@@ -77,10 +78,10 @@ ifeq ($(is_clang),1)
     optimizations = -O3 -ffast-math
 else
     # Assume GCC
-    optimizations = -Ofast -mfpmath=sse -funsafe-loop-optimizations
+    optimizations = -Ofast -funsafe-loop-optimizations
 endif
 
-optimizations += -msse3 -flto -fno-exceptions -DNDEBUG
+optimizations += -flto -fno-exceptions -DNDEBUG
 
 warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute \
   -Wno-switch -Wredundant-decls -Wuninitialized
@@ -133,7 +134,7 @@ endif
 
 # _FILE_OFFSET_BITS=64 gives nicer errors for large files (even though we don't
 # support them on 32-bit systems)
-compile_flags += $(warnings) -D_FILE_OFFSET_BITS=64 $(shell sdl2-config --cflags)
+#compile_flags += $(warnings) -D_FILE_OFFSET_BITS=64 $(shell sdl2-config --cflags)
 
 #
 # Targets

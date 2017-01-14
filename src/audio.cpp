@@ -64,9 +64,6 @@ void read_samples(int16_t *dst, size_t len) {
             memset(dst + contig_avail + avail, 0, sizeof(*buf)*(len - avail));
             assert(start_index + avail == end_index);
             start_index = end_index;
-#ifndef RUN_TESTS
-            puts("audio buffer underflow!");
-#endif
         }
     }
 }
@@ -114,9 +111,6 @@ static void write_samples(int16_t const *src, size_t len) {
             memcpy(buf + end_index, src + contig_avail, sizeof(*buf)*avail);
             assert(end_index + avail == start_index);
             end_index = start_index;
-#ifndef RUN_TESTS
-            puts("audio buffer overflow!");
-#endif
         }
     }
 }
