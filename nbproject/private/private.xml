@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <code-assistance-data xmlns="http://www.netbeans.org/ns/make-project-private/1">
+        <code-model-enabled>true</code-model-enabled>
+    </code-assistance-data>
+    <data xmlns="http://www.netbeans.org/ns/make-project-private/1">
+        <activeConfTypeElem>0</activeConfTypeElem>
+        <activeConfIndexElem>0</activeConfIndexElem>
+    </data>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/sdl_backend.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/timing.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/input.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/controller.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/sdl_backend.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/common.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/save_states.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/input.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/palette.inc</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/audio.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/audio.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/tables.c</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/controller.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/cpu.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/save_states.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/apu.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/md5.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/blip_buf.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/blip_buf.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/apu.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/main.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/include/common.h</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/timing.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/ppu.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/rom.cpp</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/Makefile</file>
+            <file>file:/home/danny/steamlink-sdk/examples/nesalizer/src/cpu.cpp</file>
+        </group>
+    </open-files>
+</project-private>
