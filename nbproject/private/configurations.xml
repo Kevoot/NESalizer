@@ -83,6 +83,11 @@
         </gdb_interceptlist>
         <gdb_options>
           <DebugOptions>
+            <option name="reverse_debugging" value="on"/>
+            <option name="gdb_init_file"
+                    value="/home/danny/steamlink-sdk/examples/NESalizer/.gdbinit"/>
+            <option name="gdb_source_dirs" value="."/>
+            <option name="debug_command" value="gdb-multiarch"/>
           </DebugOptions>
         </gdb_options>
         <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
@@ -96,7 +101,7 @@
         </runcommandpicklist>
         <runcommand>"${OUTPUT_PATH}"</runcommand>
         <rundir>.</rundir>
-        <buildfirst>false</buildfirst>
+        <buildfirst>true</buildfirst>
         <terminal-type>0</terminal-type>
         <remove-instrumentation>0</remove-instrumentation>
         <environment>

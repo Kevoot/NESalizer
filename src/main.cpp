@@ -28,8 +28,7 @@ int main(int argc, char *argv[]) {
     init_sdl();
     SDL_ShowCursor(SDL_DISABLE);
 
-    // Create a separate emulation thread and use this thread as the rendering
-    // thread
+    // Create a separate emulation thread and use this thread as the rendering thread
     SDL_Thread *emu_thread;
     fail_if(!(emu_thread = SDL_CreateThread(emulation_thread, "emulation", 0)),
             "failed to create emulation thread: %s", SDL_GetError());

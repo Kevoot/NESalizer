@@ -66,7 +66,7 @@ void draw_frame() {
 // Audio
 //
 
-Uint16 const sdl_audio_buffer_size = 1024;
+Uint16 const sdl_audio_buffer_size = 5000;
 static SDL_AudioDeviceID audio_device_id;
 
 static void audio_callback(void*, Uint8 *stream, int len) {
@@ -98,9 +98,6 @@ void handle_ui_keys() {
         save_state();
     else if (keys[SDL_SCANCODE_L])
         load_state();
-    
-    if (keys[SDL_SCANCODE_ESCAPE])
-        exit_sdl_thread();
 
     handle_rewind(keys[SDL_SCANCODE_R]);
 
@@ -128,9 +125,7 @@ static void process_events() {
 
 void sdl_thread() {
     for (;;) {
-
         // Wait for the emulation thread to signal that a frame has completed
-
         SDL_LockMutex(frame_lock);
         ready_to_draw_new_frame = true;
         while (!frame_available && !pending_sdl_thread_exit)
@@ -141,11 +136,7 @@ void sdl_thread() {
         }
         frame_available = ready_to_draw_new_frame = false;
         SDL_UnlockMutex(frame_lock);
-
-        // Process events and calculate controller input state (which might
-        // need left+right/up+down elimination)
         process_events();
-
         // Draw the new frame
         fail_if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32)),
           "failed to update screen texture: %s", SDL_GetError());
@@ -165,7 +156,6 @@ void exit_sdl_thread() {
 //
 // Initialization and de-initialization
 //
-
 void init_sdl() {
     SDL_version sdl_compiled_version, sdl_linked_version;
     SDL_VERSION(&sdl_compiled_version);
@@ -173,10 +163,6 @@ void init_sdl() {
     printf("Using SDL backend. Compiled against SDL %d.%d.%d, linked to SDL %d.%d.%d.\n",
            sdl_compiled_version.major, sdl_compiled_version.minor, sdl_compiled_version.patch,
            sdl_linked_version.major, sdl_linked_version.minor, sdl_linked_version.patch);
-
-    // SDL and video
-    // Make this configurable later
-    //SDL_DisableScreenSaver();
 
     fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
@@ -186,7 +172,7 @@ void init_sdl() {
         "Nesalizer",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         scale_factor*256, scale_factor*240,
-        0)),
+        SDL_WINDOW_FULLSCREEN or SDL_WINDOW_OPENGL)),
       "failed to create window: %s", SDL_GetError());
 
     fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED)),
@@ -214,6 +200,7 @@ void init_sdl() {
         putchar('\n');
     }
 
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
     fail_if(!(screen_tex =
       SDL_CreateTexture(
         renderer,
@@ -233,7 +220,7 @@ void init_sdl() {
     SDL_AudioSpec want;
     SDL_zero(want);
     want.freq     = sample_rate;
-    want.format   = AUDIO_S16;
+    want.format   = AUDIO_S16SYS;
     want.channels = 1;
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;

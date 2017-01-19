@@ -1,5 +1,5 @@
 #!/bin/bash
 #
-exec rm ./build/*.o
-exec "rm ./build/*.d"
+#rm ./build/*.o
+#rm ./build/*.d
 echo "Cleanup Complete."

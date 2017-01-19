@@ -9,4 +9,4 @@ if [ "${MARVELL_ROOTFS}" = "" ]; then
 fi
 cd "${TOP}"
 
-gdb
+gdb-multiarch

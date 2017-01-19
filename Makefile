@@ -6,14 +6,9 @@ endif
 ifeq ($(origin CC), default)
   CC              = gcc
 endif
-CONF              = release
-INCLUDE_DEBUGGER  = 0
-RECORD_MOVIE      = 0
+CONF              = release-debug
 BACKTRACE_SUPPORT = 1
-TEST              = 0
-ifneq ($(V),1)
-    q = @
-endif
+q = @
 is_clang := $(if $(findstring clang,$(shell "$(CXX)" -v 2>&1)),1,0)
 cpp_sources = audio apu blip_buf common controller cpu input main md5   \
   mapper mapper_0 mapper_1 mapper_2 mapper_3 mapper_4 mapper_5 mapper_7 \
@@ -27,8 +22,7 @@ deps        = $(addprefix $(BUILD_DIR)/,$(c_sources:=.d) $(cpp_sources:=.d))
 compile_flags := -I$(MARVELL_ROOTFS)/usr/include/SDL2 -DHAVE_OPENGLES2
 LDLIBS :=  -lSDL2 -lSDL2_test -lrt
 #optimizations = -O2 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7
-#warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute \
-  -Wno-switch -Wredundant-decls -Wuninitialized -Wmaybe-uninitialized -Wunsafe-loop-optimizations
+#optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 -DNDEBUG
 optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 -DNDEBUG
 warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute -Wno-switch -Wredundant-decls -Wuninitialized
 ifeq ($(filter debug release release-debug,$(CONF)),)

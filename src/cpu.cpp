@@ -772,11 +772,6 @@ static void process_pending_events() {
 
     if (pending_frame_completion) {
         pending_frame_completion = false;
-
-// Run tests as fast as we can
-//#ifndef RUN_TESTS
-//        sleep_till_end_of_frame();
-//#endif
         draw_frame();
         end_audio_frame();
         begin_audio_frame();

@@ -104,7 +104,6 @@ void calc_controller_state() {
     }
 
     reset_pushed = keys[SDL_SCANCODE_F5];
-
     SDL_UnlockMutex(event_lock);
 }
 
