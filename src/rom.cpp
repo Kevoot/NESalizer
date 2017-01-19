@@ -3,9 +3,6 @@
 #include "apu.h"
 #include "audio.h"
 #include "mapper.h"
-#ifdef RECORD_MOVIE
-#  include "movie.h"
-#endif
 #include "md5.h"
 #include "ppu.h"
 #include "rom.h"
@@ -168,10 +165,6 @@ void load_rom(char const *filename, bool print_info) {
     init_audio_for_rom();
     init_ppu_for_rom();
     init_save_states_for_rom();
-#ifdef RECORD_MOVIE
-    // Needs to know whether PAL or NTSC, so can't be done in main()
-    init_movie();
-#endif
 }
 
 void unload_rom() {
@@ -186,9 +179,6 @@ void unload_rom() {
 
     deinit_audio_for_rom();
     deinit_save_states_for_rom();
-#ifdef RECORD_MOVIE
-    end_movie();
-#endif
 }
 
 // ROM detection from a PRG MD5 digest. Needed to infer and correct information
@@ -222,7 +212,7 @@ static void do_rom_specific_overrides() {
 
 #if 0
     for (unsigned i = 0; i < 16; ++i)
-        printf("%02X", md5[i]);
+        //printf("%02X", md5[i]);
     putchar('\n');
 #endif
 

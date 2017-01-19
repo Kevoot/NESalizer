@@ -804,7 +804,7 @@ static uint8_t read_vram() {
 
     if (initial_frame) {
         ppu_data_reg = 0;
-        printf("Warning: Reading PPUDATA during initial frame, at (%u,%u)\n", scanline, dot);
+        //printf("Warning: Reading PPUDATA during initial frame, at (%u,%u)\n", scanline, dot);
     }
 
     return ppu_open_bus;
@@ -922,7 +922,7 @@ void write_ppu_reg(uint8_t val, unsigned n) {
     case 0:
         {
         if (initial_frame) {
-            printf("Warning: Writing PPUCTRL during initial frame, at (%u,%u)\n", scanline, dot);
+            //printf("Warning: Writing PPUCTRL during initial frame, at (%u,%u)\n", scanline, dot);
             return;
         }
 
@@ -955,7 +955,7 @@ void write_ppu_reg(uint8_t val, unsigned n) {
     // PPUMASK
     case 1:
         if (initial_frame) {
-            printf("Warning: Writing PPUMASK during initial frame, at (%u,%u)\n", scanline, dot);
+            //printf("Warning: Writing PPUMASK during initial frame, at (%u,%u)\n", scanline, dot);
             return;
         }
 
@@ -982,7 +982,7 @@ void write_ppu_reg(uint8_t val, unsigned n) {
     // PPUSCROLL
     case 5:
         if (initial_frame) {
-            printf("Warning: Writing PPUSCROLL during initial frame, at (%u,%u)\n", scanline, dot);
+            //printf("Warning: Writing PPUSCROLL during initial frame, at (%u,%u)\n", scanline, dot);
             return;
         }
 
@@ -1004,7 +1004,7 @@ void write_ppu_reg(uint8_t val, unsigned n) {
     // PPUADDR
     case 6:
         if (initial_frame) {
-            printf("Warning: Writing PPUADDR during initial frame, at (%u,%u)\n", scanline, dot);
+            //printf("Warning: Writing PPUADDR during initial frame, at (%u,%u)\n", scanline, dot);
             return;
         }
 

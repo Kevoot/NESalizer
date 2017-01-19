@@ -3,15 +3,9 @@
 #include "audio.h"
 #include "cpu.h"
 #include "input.h"
-#ifdef RECORD_MOVIE
-#  include "movie.h"
-#endif
+
 #include "save_states.h"
 #include "sdl_backend.h"
-#ifdef RUN_TESTS
-#  include "test.h"
-#endif
-
 #include <SDL.h>
 
 //
@@ -54,12 +48,8 @@ void put_pixel(unsigned x, unsigned y, uint32_t color) {
 }
 
 void draw_frame() {
-#ifdef RECORD_MOVIE
-    add_movie_video_frame(back_buffer);
-#endif
 
     // Signal to the SDL thread that the frame has ended
-
     SDL_LockMutex(frame_lock);
     // Drop the new frame if the old one is still being rendered. This also
     // means that we drop event processing for one frame, but it's probably not
@@ -76,12 +66,11 @@ void draw_frame() {
 // Audio
 //
 
-Uint16 const sdl_audio_buffer_size = 2048;
+Uint16 const sdl_audio_buffer_size = 1024;
 static SDL_AudioDeviceID audio_device_id;
 
 static void audio_callback(void*, Uint8 *stream, int len) {
     assert(len >= 0);
-
     read_samples((int16_t*)stream, len/sizeof(int16_t));
 }
 
@@ -109,6 +98,9 @@ void handle_ui_keys() {
         save_state();
     else if (keys[SDL_SCANCODE_L])
         load_state();
+    
+    if (keys[SDL_SCANCODE_ESCAPE])
+        exit_sdl_thread();
 
     handle_rewind(keys[SDL_SCANCODE_R]);
 
@@ -130,9 +122,6 @@ static void process_events() {
         if (event.type == SDL_QUIT) {
             end_emulation();
             pending_sdl_thread_exit = true;
-#ifdef RUN_TESTS
-            end_testing = true;
-#endif
         }
     SDL_UnlockMutex(event_lock);
 }
@@ -155,11 +144,9 @@ void sdl_thread() {
 
         // Process events and calculate controller input state (which might
         // need left+right/up+down elimination)
-
         process_events();
 
         // Draw the new frame
-
         fail_if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32)),
           "failed to update screen texture: %s", SDL_GetError());
         fail_if(SDL_RenderCopy(renderer, screen_tex, 0, 0),
@@ -188,9 +175,8 @@ void init_sdl() {
            sdl_linked_version.major, sdl_linked_version.minor, sdl_linked_version.patch);
 
     // SDL and video
-
     // Make this configurable later
-    SDL_DisableScreenSaver();
+    //SDL_DisableScreenSaver();
 
     fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
@@ -203,7 +189,7 @@ void init_sdl() {
         0)),
       "failed to create window: %s", SDL_GetError());
 
-    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, 0)),
+    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED)),
       "failed to create rendering context: %s", SDL_GetError());
 
     // Display some information about the renderer
@@ -247,7 +233,7 @@ void init_sdl() {
     SDL_AudioSpec want;
     SDL_zero(want);
     want.freq     = sample_rate;
-    want.format   = AUDIO_S16SYS;
+    want.format   = AUDIO_S16;
     want.channels = 1;
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;
@@ -265,7 +251,6 @@ void init_sdl() {
 
     // Ignore window events for now
     SDL_EventState(SDL_WINDOWEVENT, SDL_IGNORE);
-
     keys = SDL_GetKeyboardState(0);
 
     // SDL thread synchronization

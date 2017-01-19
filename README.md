@@ -1,32 +1,16 @@
-Nesalizer
+NESalizer for the Steam Link
 =========
 
-A work-in-progress NES emulator with a real-time rewind feature that correctly reverses sound.
-
-Some other cool features are planned :). Still lacks a GUI and persistent (on-disk) save states.
-
-## Video demonstration ##
-
-See [this video](https://www.youtube.com/watch?v=qCQkYrQo9fI) for a demonstration of rewinding. The channel has some other videos as well.
+A NES emulator with a real-time rewind feature that correctly reverses sound ported to the Steam Link.
+Still working on save-states and gamepad support.
 
 ## Building ##
 
-SDL2 is used for the final output and is the only dependency. You currently need a \*nix system.
-
-The only \*nix/POSIX dependencies are the timing functions in [**src/timing.cpp**](src/timing.cpp), which should be trivial to port. A quick-and-dirty experimental port to Windows has already been done by miker00lz, but contributions are welcome. One GCC extension (case ranges) is used currently.
-
-Commands for building on Ubuntu:
-
-    $ apt-get install libsdl2-dev
-    $ make CONF=release
+SDL2 is used for the final output and is the only dependency except the SteamLink-SDK
     
-Parallel builds (e.g., `make CONF=release -j8`) are supported too.
-
-See the *Makefile* for other options. The built-in movie recording support has sadly bitrotted due to libav changes.
-
 ## Running ##
 
-    $ ./nes <ROM file>
+ Right now it simply loads "mario(E).nes" from the current folder. A nice GUI is yet to come.
 
 Controls are currently hardcoded (in [**src/input.cpp**](src/input.cpp) and [**src/sdl_backend.cpp**](src/sdl_backend.cpp)) as follows:
 
@@ -82,15 +66,6 @@ The above setup allows most headers to assume that common.h has been included, w
 
 If you spot stuff that can be improved (or sucks), tell me (or contribute :). I appreciate reports for small nits too.
 
-## Automatic testing ##
-
-A set of test ROMs listed in *test.cpp* can be run automatically with
-
-    $ make TEST=1
-    $ ./nes
-
-This requires https://github.com/christopherpow/nes-test-roms to first be cloned into a directory called *tests*. All tests listed in *test.cpp* are expected to pass.
-
 ## Thanks ##
 
  * Shay Green (blargg) for the [blip\_buf](https://code.google.com/p/blip-buf/) waveform synthesis library and lots of test ROMs.
@@ -98,35 +73,5 @@ This requires https://github.com/christopherpow/nes-test-roms to first be cloned
  * Quietust for the Visual 2A03 and Visual 2C02 simulators.
 
  * beannaich, cpow, Disch, kevtris, Movax21, Lidnariq, loopy, thefox, Tepples, and lots of other people on the [NesDev](http://nesdev.com) forums and wiki and in #nesdev for help, docs, tests, and discussion.
-
-## Contact ##
-
-moc.liamg[ta]rezilaflu in reverse. I'm currently [looking for a job](https://linkedin.com/in/magnussonulf), so feel free to e-mail regarding that too. :)
-
-## Other stuff ##
-
-A tutorial I wrote (with help from Lidnariq and Quietust) on reading circuits in Visual 6502 and other simulators based on the same framework can be found [here](http://wiki.nesdev.com/w/index.php/Visual_circuit_tutorial). Some obscure behaviors were reverse-engineered from studying circuits and running simulations.
-
-## Screenshots ##
-
-(Not sure why I took these with linear filtering enabled. It's a bit ugly in retrospect.)
-
-### Bucky O'Hare ###
-
-![Bucky O'Hare](https://raw.github.com/ulfalizer/nesalizer/screenshots/bucky.png)
-
-### Battletoads ###
-
-![Battletoads](https://raw.github.com/ulfalizer/nesalizer/screenshots/battletoads.png)
-
-### Castlevania III ###
-
-![Castlevania III](https://raw.github.com/ulfalizer/nesalizer/screenshots/cv3.png)
-
-### Rad Racer 2 ###
-
-![Rad Racer 2](https://raw.github.com/ulfalizer/nesalizer/screenshots/radracer2.png)
-
-## License ##
 
 [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html)

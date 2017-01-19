@@ -148,10 +148,10 @@ void init_save_states_for_rom() {
 
     state_size = transfer_system_state<true, false>(0);
     size_t const rewind_buf_size = state_size*n_rewind_frames;
-#ifndef RUN_TESTS
+
     printf("save state size: %zu bytes\nrewind buffer size: %zu bytes\n",
            state_size, rewind_buf_size);
-#endif
+
     fail_if(!(state = new (std::nothrow) uint8_t[state_size]),
       "failed to allocate %zu-byte buffer for save state", state_size);
     fail_if(!(rewind_buf = new (std::nothrow) uint8_t[rewind_buf_size]),

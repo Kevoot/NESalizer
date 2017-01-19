@@ -218,17 +218,11 @@ void end_audio_frame() {
     // buffer (which lacks bounds checking).
     int const avail = blip_samples_avail(blip);
     if (avail != 0) {
-        printf("Warning: didn't read all samples from blip_buf (%d samples remain) - dropping samples\n",
-          avail);
+        //printf("Warning: didn't read all samples from blip_buf (%d samples remain) - dropping samples\n",  avail);
         blip_clear(blip);
     }
 
-#ifdef RECORD_MOVIE
-    add_movie_audio_frame(blip_samples, n_samples);
-#endif
-
     // Save the samples to the audio ring buffer
-
     lock_audio();
     write_samples(blip_samples, n_samples);
     unlock_audio();
