@@ -6,7 +6,7 @@ endif
 ifeq ($(origin CC), default)
   CC              = gcc
 endif
-CONF              = release-debug
+CONF              = release
 BACKTRACE_SUPPORT = 1
 q = @
 is_clang := $(if $(findstring clang,$(shell "$(CXX)" -v 2>&1)),1,0)
@@ -23,7 +23,7 @@ compile_flags := -I$(MARVELL_ROOTFS)/usr/include/SDL2 -DHAVE_OPENGLES2
 LDLIBS :=  -lSDL2 -lSDL2_test -lrt
 #optimizations = -O2 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7
 #optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 -DNDEBUG
-optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 -DNDEBUG
+optimizations = -O3 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7
 warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute -Wno-switch -Wredundant-decls -Wuninitialized
 ifeq ($(filter debug release release-debug,$(CONF)),)
     $(error unknown configuration "$(CONF)")

@@ -19,15 +19,6 @@ static SDL_Window   *screen;
 static SDL_Renderer *renderer;
 static SDL_Texture  *screen_tex;
 
-// On Unity with the Nouveau driver, displaying the frame sometimes blocks for
-// a very long time (to the tune of only managing 30 FPS with everything
-// removed but render calls when the translucent Ubuntu menu is open, and often
-// less than 60 with Firefox open too). This in turn slows down emulation and
-// messes up audio. To get around it, we upload frames in the SDL thread and
-// keep a back buffer for drawing into from the emulation thread while the
-// frame is being uploaded (a kind of manual triple buffering). If the frame
-// doesn't upload in time for the next frame, we drop the new frame. This gives
-// us automatic frame skipping in general.
 //
 // TODO: This could probably be optimized to eliminate some copying and format
 // conversions.
@@ -39,6 +30,11 @@ static SDL_mutex *frame_lock;
 static SDL_cond  *frame_available_cond;
 static bool ready_to_draw_new_frame;
 static bool frame_available;
+
+static bool pending_sdl_thread_exit;
+
+// Protects the 'keys' array from being read while being updated
+SDL_mutex   *event_lock;
 
 void put_pixel(unsigned x, unsigned y, uint32_t color) {
     assert(x < 256);
@@ -65,7 +61,7 @@ void draw_frame() {
 //
 // Audio
 //
-
+Uint8 const *keys;
 Uint16 const sdl_audio_buffer_size = 5000;
 static SDL_AudioDeviceID audio_device_id;
 
@@ -83,34 +79,98 @@ void stop_audio_playback() { SDL_PauseAudioDevice(audio_device_id, 1); }
 //
 // Input
 //
+struct Controller_t
+{
+	enum Type {
+		k_Available,
+		k_Joystick,
+		k_Gamepad,
+	} type;
 
-Uint8 const *keys;
+	SDL_JoystickID instance_id;
+	SDL_Joystick *joystick;
+	SDL_GameController *gamepad;
+};
+static Controller_t controllers[2];
 
+static void add_controller(Controller_t::Type type, int device_index)
+{
+	for (int i = 0; i < SDL_arraysize(controllers); ++i) {
+		Controller_t &controller = controllers[i];
+		if (controller.type == Controller_t::k_Available) {
+			if (type == Controller_t::k_Gamepad) {
+				controller.gamepad = SDL_GameControllerOpen(device_index);
+				if (!controller.gamepad) {
+					fprintf(stderr, "Couldn't open gamepad: %s\n", SDL_GetError());
+					return;
+				}
+				controller.joystick = SDL_GameControllerGetJoystick(controller.gamepad);
+				printf("Opened game controller %s at index %d\n", SDL_GameControllerName(controller.gamepad), i);
+			} else {
+				controller.joystick = SDL_JoystickOpen(device_index);
+				if (!controller.joystick) {
+					fprintf(stderr, "Couldn't open joystick: %s\n", SDL_GetError());
+					return;
+				}
+				printf("Opened joystick %s at index %d\n", SDL_JoystickName(controller.joystick), i);
+			}
+			controller.type = type;
+			controller.instance_id = SDL_JoystickInstanceID(controller.joystick);
+			return;
+		}
+	}
+
+	// No free controller slots, drop this one
+}
+
+static bool get_controller_index(Controller_t::Type type, SDL_JoystickID instance_id, int *controller_index)
+{
+	for (int i = 0; i < SDL_arraysize(controllers); ++i) {
+		Controller_t &controller = controllers[i];
+		if (controller.type != type) {
+			continue;
+		}
+		if (controller.instance_id != instance_id) {
+			continue;
+		}
+		*controller_index = i;
+		return true;
+	}
+	return false;
+}
+
+static void remove_controller(Controller_t::Type type, SDL_JoystickID instance_id)
+{
+	for (int i = 0; i < SDL_arraysize(controllers); ++i) {
+		Controller_t &controller = controllers[i];
+		if (controller.type != type) {
+			continue;
+		}
+		if (controller.instance_id != instance_id) {
+			continue;
+		}
+		if (controller.type == Controller_t::k_Gamepad) {
+			SDL_GameControllerClose(controller.gamepad);
+		} else {
+			SDL_JoystickClose(controller.joystick);
+		}
+		controller.type = Controller_t::k_Available;
+		return;
+	}
+}
 //
 // SDL thread and events
-//
-
 // Runs from emulation thread
 void handle_ui_keys() {
     SDL_LockMutex(event_lock);
-
     if (keys[SDL_SCANCODE_S])
         save_state();
     else if (keys[SDL_SCANCODE_L])
         load_state();
-
-    handle_rewind(keys[SDL_SCANCODE_R]);
-
     if (reset_pushed)
         soft_reset();
-
     SDL_UnlockMutex(event_lock);
 }
-
-static bool pending_sdl_thread_exit;
-
-// Protects the 'keys' array from being read while being updated
-SDL_mutex   *event_lock;
 
 static void process_events() {
     SDL_Event event;
@@ -157,12 +217,6 @@ void exit_sdl_thread() {
 // Initialization and de-initialization
 //
 void init_sdl() {
-    SDL_version sdl_compiled_version, sdl_linked_version;
-    SDL_VERSION(&sdl_compiled_version);
-    SDL_GetVersion(&sdl_linked_version);
-    printf("Using SDL backend. Compiled against SDL %d.%d.%d, linked to SDL %d.%d.%d.\n",
-           sdl_compiled_version.major, sdl_compiled_version.minor, sdl_compiled_version.patch,
-           sdl_linked_version.major, sdl_linked_version.minor, sdl_linked_version.patch);
 
     fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
@@ -254,12 +308,10 @@ void init_sdl() {
 void deinit_sdl() {
     SDL_DestroyRenderer(renderer); // Also destroys the texture
     SDL_DestroyWindow(screen);
-
     SDL_DestroyMutex(event_lock);
-
     SDL_DestroyMutex(frame_lock);
     SDL_DestroyCond(frame_available_cond);
-
+    SDL_QuitSubSystem( SDL_INIT_GAMECONTROLLER );
     SDL_CloseAudioDevice(audio_device_id); // Prolly not needed, but play it safe
     SDL_Quit();
 }

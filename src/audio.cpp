@@ -153,33 +153,7 @@ void set_audio_signal_level(int16_t level) {
     unsigned time  = frame_offset;
     int      delta = level - previous_signal_level;
 
-    if (is_backwards_frame) {
-        // Flip deltas and add them from the end of the frame to reverse audio.
-        // Since the exact length of the frame can't be known in advance, the
-        // length of each frame is recorded when it is saved to the rewind
-        // buffer.
-        //
-        // This is easiest to visualize by thinking of deltas as fenceposts and
-        // the signal level as spans between them. While rewinding, the signal
-        // level that's being set should be considered the one to the left of
-        // the fencepost.
-        //
-        // One complication is the boundary between frames while rewinding -
-        // there the final sample added to one frame is not followed in time by
-        // the first sample of the next frame. To solve this, we bring the
-        // signal level down to zero at the end of each frame, and then adjust
-        // it to the correct value in the next frame (when rewinding, "to zero"
-        // becomes "from zero", and everything still works out). We also call
-        // begin_frame() between frames to invalidate the cached signal level
-        // in apu.cpp. Together this allows frames to be mixed-and-matched
-        // arbitrarily in time.
-        //
-        // Thanks to Blargg for help on this.
-        time  = get_frame_len() - time;
-        delta = -delta;
-    }
     blip_add_delta(blip, time, delta);
-
     previous_signal_level = level;
 }
 
@@ -188,8 +162,6 @@ void end_audio_frame() {
         // No audio added; blip_end_frame() dislikes being called with an
         // offset of 0
         return;
-
-    assert(!(is_backwards_frame && frame_offset != get_frame_len()));
 
     // Bring the signal level at the end of the frame to zero as outlined in
     // set_audio_signal_level()
