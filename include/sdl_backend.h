@@ -29,9 +29,4 @@ void unlock_audio();
 void start_audio_playback();
 void stop_audio_playback();
 
-// Input and events
-
-void handle_ui_keys();
-
 extern SDL_mutex *event_lock;
-extern Uint8 const *keys;

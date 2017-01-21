@@ -34,7 +34,6 @@ static bool frame_available;
 static bool pending_sdl_thread_exit;
 SDL_mutex   *event_lock;
 
-Uint8 const *keys;
 Uint16 const sdl_audio_buffer_size = 5000;
 static SDL_AudioDeviceID audio_device_id;
 
@@ -147,32 +146,112 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
 {
     switch(button)
     {
-        case  SDL_CONTROLLER_BUTTON_A:  
+        case  SDL_CONTROLLER_BUTTON_A:
+            if (pressed)
+            {
+                set_button_state(njoy,0);
+            }
+            else
+            {
+                clear_button_state(njoy,0);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_B:
+            if (pressed)
+            {
+                set_button_state(njoy,1);
+            }
+            else
+            {
+                clear_button_state(njoy,1);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_X:
+            if (pressed)
+            {
+            /////////////////////////////////////
+            }
+            else
+            {
+            //////////////////////////////////////    
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_Y:
+            if (pressed)
+            {
+            ///////////////////////////////////////
+            }
+            else
+            {
+            ///////////////////////////////////////    
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_BACK:
+            if (pressed)
+            {
+                set_button_state(njoy,2);
+            }
+            else
+            {
+                clear_button_state(njoy,2);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_START:
+            if (pressed)
+            {
+                set_button_state(njoy,3);
+            }
+            else
+            {
+                clear_button_state(njoy,3);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_GUIDE:
             if (pressed){
-                // EXIT GAME
+                // EXIT NESalizer
                 exit_sdl_thread();
                 deinit_sdl();
             }
             break;
         case  SDL_CONTROLLER_BUTTON_DPAD_UP:
+            if (pressed)
+            {
+                set_button_state(njoy,4);
+            }
+            else
+            {
+                clear_button_state(njoy,4);
+            }
             break;
         case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            if (pressed)
+            {
+                set_button_state(njoy,5);
+            }
+            else
+            {
+                clear_button_state(njoy,5);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            if (pressed)
+            {
+                set_button_state(njoy,6);
+            }
+            else
+            {
+                clear_button_state(njoy,6);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            if (pressed)
+            {
+                set_button_state(njoy,7);
+            }
+            else
+            {
+                clear_button_state(njoy,7);
+            }
             break;
         case  SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
             if (pressed){
@@ -187,32 +266,19 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
             }
             break;
         case  SDL_CONTROLLER_BUTTON_LEFTSTICK:
-            break;
-        case  SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-            break;
-         
+            if (pressed)
+            {
+                // Reset the emulator
+                soft_reset();
+            }
+            else
+            {
+            ////////////////////////
+            }
+            break;     
     }
 }
-//
-// SDL thread and events
-// Runs from emulation thread
-//void handle_ui_keys() {
-    //SDL_LockMutex(event_lock);
-    //switch(keys[SDL_SCANCODE_S])
-    //{
-    //    case SDL_SCANCODE_S:
-    //        save_state();
-    //        break;
-    //    case SDL_SCANCODE_L:
-    //        load_state();
-    //        break;
-    //   case SDL_SCANCODE_F5:
-    //        reset_pushed = keys[SDL_SCANCODE_F5];
-    //        soft_reset();
-    //        break;
-    //}    
-    //SDL_UnlockMutex(event_lock);
-//}
+
 static void process_events() {
     SDL_Event event;
     SDL_LockMutex(event_lock);
@@ -281,9 +347,7 @@ void exit_sdl_thread() {
     SDL_UnlockMutex(frame_lock);
 }
 
-//
 // Initialization and de-initialization
-//
 void init_sdl() {
 
     fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
@@ -326,8 +390,7 @@ void init_sdl() {
     fail_if(!(screen_tex =
       SDL_CreateTexture(
         renderer,
-        // SDL takes endianess into account, so this becomes GL_RGBA8
-        // internally on little-endian systems
+        // SDL takes endianess into account, so this becomes GL_RGBA8 internally on little-endian systems
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
         256, 240)),
@@ -338,11 +401,11 @@ void init_sdl() {
     front_buffer = render_buffers[1];
 
     // Audio
-
     SDL_AudioSpec want;
     SDL_zero(want);
     want.freq     = sample_rate;
-    want.format   = AUDIO_S16SYS;
+    //want.format   = AUDIO_S16SYS;
+    want.format   = AUDIO_U16LSB;
     want.channels = 1;
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;
@@ -350,27 +413,17 @@ void init_sdl() {
     audio_device_id = SDL_OpenAudioDevice(0, 0, &want, 0, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
 
     // Input
-    // We use SDL_GetKey/MouseState() instead
-    SDL_EventState(SDL_KEYDOWN        , SDL_IGNORE);
-    SDL_EventState(SDL_KEYUP          , SDL_IGNORE);
     SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
     SDL_EventState(SDL_MOUSEBUTTONUP  , SDL_IGNORE);
-    SDL_EventState(SDL_KEYUP          , SDL_IGNORE);
     SDL_EventState(SDL_MOUSEMOTION    , SDL_IGNORE);
 
     // Ignore window events for now
     SDL_EventState(SDL_WINDOWEVENT, SDL_IGNORE);
-    keys = SDL_GetKeyboardState(0);
 
     // SDL thread synchronization
-
-    fail_if(!(event_lock = SDL_CreateMutex()),
-      "failed to create event mutex: %s", SDL_GetError());
-
-    fail_if(!(frame_lock = SDL_CreateMutex()),
-      "failed to create frame mutex: %s", SDL_GetError());
-    fail_if(!(frame_available_cond = SDL_CreateCond()),
-      "failed to create frame condition variable: %s", SDL_GetError());
+    fail_if(!(event_lock = SDL_CreateMutex()), "failed to create event mutex: %s", SDL_GetError());
+    fail_if(!(frame_lock = SDL_CreateMutex()), "failed to create frame mutex: %s", SDL_GetError());
+    fail_if(!(frame_available_cond = SDL_CreateCond()),"failed to create frame condition variable: %s", SDL_GetError());
 }
 
 void deinit_sdl() {

@@ -19,7 +19,7 @@ uint8_t read_controller(unsigned n) {
     // Reading the controllers with the strobe latch on returns the state of A
     // over and over. Happens rarely.
     if (strobe_latch)
-        return (cpu_data_bus & 0xE0) | (get_button_states(n) & 1);
+        return (cpu_data_bus & 0xE0) | (read_button_states(n) & 1);
 
     uint8_t const result = (cpu_data_bus & 0xE0) | (controller_bits[n] & 1);
     // 1s are shifted in on an official Nintendo controller, so emulate that
@@ -33,7 +33,7 @@ void write_controller_strobe(bool strobe) {
     // it goes from set to unset.
     if (strobe_latch && !strobe)
         for (unsigned n = 0; n < 2; ++n)
-            controller_bits[n] = get_button_states(n);
+            controller_bits[n] = read_button_states(n);
 
     strobe_latch = strobe;
 }

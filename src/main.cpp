@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
  
     install_fatal_signal_handlers();
     init_apu();
-    init_input();
     init_mappers();
     
     // Not figured out how to pass arguments on the steamlink yet.
