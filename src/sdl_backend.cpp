@@ -32,53 +32,12 @@ static bool ready_to_draw_new_frame;
 static bool frame_available;
 
 static bool pending_sdl_thread_exit;
-
-// Protects the 'keys' array from being read while being updated
 SDL_mutex   *event_lock;
 
-void put_pixel(unsigned x, unsigned y, uint32_t color) {
-    assert(x < 256);
-    assert(y < 240);
-
-    back_buffer[256*y + x] = color;
-}
-
-void draw_frame() {
-
-    // Signal to the SDL thread that the frame has ended
-    SDL_LockMutex(frame_lock);
-    // Drop the new frame if the old one is still being rendered. This also
-    // means that we drop event processing for one frame, but it's probably not
-    // a huge deal.
-    if (ready_to_draw_new_frame) {
-        frame_available = true;
-        swap(back_buffer, front_buffer);
-        SDL_CondSignal(frame_available_cond);
-    }
-    SDL_UnlockMutex(frame_lock);
-}
-
-//
-// Audio
-//
 Uint8 const *keys;
 Uint16 const sdl_audio_buffer_size = 5000;
 static SDL_AudioDeviceID audio_device_id;
 
-static void audio_callback(void*, Uint8 *stream, int len) {
-    assert(len >= 0);
-    read_samples((int16_t*)stream, len/sizeof(int16_t));
-}
-
-void lock_audio() { SDL_LockAudioDevice(audio_device_id); }
-void unlock_audio() { SDL_UnlockAudioDevice(audio_device_id); }
-
-void start_audio_playback() { SDL_PauseAudioDevice(audio_device_id, 0); }
-void stop_audio_playback() { SDL_PauseAudioDevice(audio_device_id, 1); }
-
-//
-// Input
-//
 struct Controller_t
 {
 	enum Type {
@@ -92,6 +51,34 @@ struct Controller_t
 	SDL_GameController *gamepad;
 };
 static Controller_t controllers[2];
+
+void lock_audio() { SDL_LockAudioDevice(audio_device_id); }
+void unlock_audio() { SDL_UnlockAudioDevice(audio_device_id); }
+
+void start_audio_playback() { SDL_PauseAudioDevice(audio_device_id, 0); }
+void stop_audio_playback() { SDL_PauseAudioDevice(audio_device_id, 1); }
+
+void put_pixel(unsigned x, unsigned y, uint32_t color) {
+    assert(x < 256);
+    assert(y < 240);
+
+    back_buffer[256*y + x] = color;
+}
+
+void draw_frame() {
+    SDL_LockMutex(frame_lock);
+    if (ready_to_draw_new_frame) {
+        frame_available = true;
+        swap(back_buffer, front_buffer);
+        SDL_CondSignal(frame_available_cond);
+    }
+    SDL_UnlockMutex(frame_lock);
+}
+
+static void audio_callback(void*, Uint8 *stream, int len) {
+    assert(len >= 0);
+    read_samples((int16_t*)stream, len/sizeof(int16_t));
+}
 
 static void add_controller(Controller_t::Type type, int device_index)
 {
@@ -119,8 +106,6 @@ static void add_controller(Controller_t::Type type, int device_index)
 			return;
 		}
 	}
-
-	// No free controller slots, drop this one
 }
 
 static bool get_controller_index(Controller_t::Type type, SDL_JoystickID instance_id, int *controller_index)
@@ -158,27 +143,110 @@ static void remove_controller(Controller_t::Type type, SDL_JoystickID instance_i
 		return;
 	}
 }
+void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
+{
+    switch(button)
+    {
+        case  SDL_CONTROLLER_BUTTON_A:  
+            break;
+        case  SDL_CONTROLLER_BUTTON_B:
+            break;
+        case  SDL_CONTROLLER_BUTTON_X:
+            break;
+        case  SDL_CONTROLLER_BUTTON_Y:
+            break;
+        case  SDL_CONTROLLER_BUTTON_BACK:
+            break;
+        case  SDL_CONTROLLER_BUTTON_START:
+            break;
+        case  SDL_CONTROLLER_BUTTON_GUIDE:
+            if (pressed){
+                // EXIT GAME
+                exit_sdl_thread();
+                deinit_sdl();
+            }
+            break;
+        case  SDL_CONTROLLER_BUTTON_DPAD_UP:
+            break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            break;
+        case  SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            break;
+        case  SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            break;
+        case  SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+            if (pressed){
+                // Load Save-state
+                load_state();
+            }
+            break;
+        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+            if (pressed){
+                // Save State
+                save_state();
+            }
+            break;
+        case  SDL_CONTROLLER_BUTTON_LEFTSTICK:
+            break;
+        case  SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+            break;
+         
+    }
+}
 //
 // SDL thread and events
 // Runs from emulation thread
-void handle_ui_keys() {
-    SDL_LockMutex(event_lock);
-    if (keys[SDL_SCANCODE_S])
-        save_state();
-    else if (keys[SDL_SCANCODE_L])
-        load_state();
-    if (reset_pushed)
-        soft_reset();
-    SDL_UnlockMutex(event_lock);
-}
-
+//void handle_ui_keys() {
+    //SDL_LockMutex(event_lock);
+    //switch(keys[SDL_SCANCODE_S])
+    //{
+    //    case SDL_SCANCODE_S:
+    //        save_state();
+    //        break;
+    //    case SDL_SCANCODE_L:
+    //        load_state();
+    //        break;
+    //   case SDL_SCANCODE_F5:
+    //        reset_pushed = keys[SDL_SCANCODE_F5];
+    //        soft_reset();
+    //        break;
+    //}    
+    //SDL_UnlockMutex(event_lock);
+//}
 static void process_events() {
     SDL_Event event;
     SDL_LockMutex(event_lock);
     while (SDL_PollEvent(&event))
-        if (event.type == SDL_QUIT) {
-            end_emulation();
-            pending_sdl_thread_exit = true;
+        switch(event.type)
+        {
+            case SDL_QUIT:
+                end_emulation();
+                pending_sdl_thread_exit = true;
+                break;
+            case SDL_CONTROLLERDEVICEADDED:
+		add_controller(Controller_t::k_Gamepad, event.cdevice.which);
+		break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+		remove_controller(Controller_t::k_Gamepad, event.cdevice.which);
+		break;
+            case SDL_CONTROLLERBUTTONDOWN:
+		{
+		int controller_index;
+		if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
+                    break;
+                }
+		joyprocess(event.cbutton.button, SDL_TRUE, controller_index);
+		}
+		break;
+            case SDL_CONTROLLERBUTTONUP:
+		{
+		int controller_index;
+		if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
+                    break;
+		}
+		joyprocess(event.cbutton.button, SDL_FALSE, controller_index);
+		}
+		break;
         }
     SDL_UnlockMutex(event_lock);
 }

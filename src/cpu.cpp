@@ -776,7 +776,6 @@ static void process_pending_events() {
         end_audio_frame();
         begin_audio_frame();
         calc_controller_state();
-        handle_ui_keys();
         frame_offset = 0;
     }
 

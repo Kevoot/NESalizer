@@ -18,20 +18,26 @@ static int emulation_thread(void*) {
 int main(int argc, char *argv[]) {
  
     install_fatal_signal_handlers();
-
-    // One-time initialization of various components
     init_apu();
     init_input();
     init_mappers();
+    
+    // Not figured out how to pass arguments on the steamlink yet.
+    program_name = argv[0] ? argv[0] : "nesalizer";
+    if (argc != 2) {
+        load_rom("mario(E).nes", true);   
+    }
+    else 
+    {
+         load_rom(argv[1], true);      
+    }
 
-    load_rom("mario(E).nes", true);
     init_sdl();
     SDL_ShowCursor(SDL_DISABLE);
-
-    // Create a separate emulation thread and use this thread as the rendering thread
     SDL_Thread *emu_thread;
-    fail_if(!(emu_thread = SDL_CreateThread(emulation_thread, "emulation", 0)),
-            "failed to create emulation thread: %s", SDL_GetError());
+    
+    // Create a separate emulation thread and use this thread as the rendering thread
+    fail_if(!(emu_thread = SDL_CreateThread(emulation_thread, "emulation", 0)), "failed to create emulation thread: %s", SDL_GetError());
     
     sdl_thread();
     SDL_WaitThread(emu_thread, 0);

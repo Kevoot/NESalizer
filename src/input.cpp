@@ -1,8 +1,5 @@
 #include "common.h"
-
 #include "sdl_backend.h"
-
-// The input routines are still tied to SDL
 #include <SDL.h>
 
 // If true, prevent the game from seeing left+right or up+down pressed
@@ -27,7 +24,6 @@ bool reset_pushed;
 
 void init_input() {
     // Currently hardcoded
-
     controller_data[0].key_a      = SDL_SCANCODE_X;
     controller_data[0].key_b      = SDL_SCANCODE_Z;
     controller_data[0].key_select = SDL_SCANCODE_RSHIFT;
@@ -102,8 +98,6 @@ void calc_controller_state() {
         c.up_was_pushed    = keys[c.key_up];
         c.down_was_pushed  = keys[c.key_down];
     }
-
-    reset_pushed = keys[SDL_SCANCODE_F5];
     SDL_UnlockMutex(event_lock);
 }
 
@@ -113,6 +107,15 @@ uint8_t get_button_states(unsigned n) {
            (c.up_pushed    << 4) | (c.start_pushed << 3) | (c.select_pushed << 2) |
            (c.b_pushed     << 1) |  c.a_pushed;
 }
+
+uint8_t set_button_state(unsigned n, unsigned i) {
+
+}
+
+uint8_t clear_button_state(unsigned n, unsigned i) {
+
+}
+
 
 template<bool calculating_size, bool is_save>
 void transfer_input_state(uint8_t *&buf) {

@@ -11,13 +11,10 @@
 #include "save_states.h"
 #include "timing.h"
 
-// Buffer for a single plain old save state. Not related to rewinding.
+// Buffer for an in-memory save state.
 static uint8_t *state;
-// Total state size. Varies depending on the mapper.
 static size_t state_size;
-// For the plain old save state
 static bool has_save;
-bool is_backwards_frame;
 
 template<bool calculating_size, bool is_save>
 static size_t transfer_system_state(uint8_t *buf) {

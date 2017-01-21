@@ -20,10 +20,10 @@ c_objects   = $(addprefix $(BUILD_DIR)/,$(c_sources:=.o))
 objects     = $(c_objects) $(cpp_objects)
 deps        = $(addprefix $(BUILD_DIR)/,$(c_sources:=.d) $(cpp_sources:=.d))
 compile_flags := -I$(MARVELL_ROOTFS)/usr/include/SDL2 -DHAVE_OPENGLES2
-LDLIBS :=  -lSDL2 -lSDL2_test -lrt
-#optimizations = -O2 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7
-#optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 -DNDEBUG
-optimizations = -O3 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7
+LDLIBS :=  -lSDL2 -lSDL2_test -lrt -lm
+#optimizations = -O3 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 
+#optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 
+optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -fsingle-precision-constant -flto -fno-exceptions -mtune=arm7 -mfpu=vfpv3 -mfpu=neon -mhard-float -ffinite-math-only -funsafe-math-optimizations
 warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute -Wno-switch -Wredundant-decls -Wuninitialized
 ifeq ($(filter debug release release-debug,$(CONF)),)
     $(error unknown configuration "$(CONF)")

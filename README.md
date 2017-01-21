@@ -1,7 +1,7 @@
 NESalizer for the Steam Link
 =========
 
-A NES emulator with a real-time rewind feature that correctly reverses sound ported to the Steam Link.
+A NES emulator using SDL2 ported to the Steam Link.
 Still working on save-states and gamepad support.
 
 ## Building ##
@@ -10,7 +10,7 @@ SDL2 is used for the final output and is the only dependency except the SteamLin
     
 ## Running ##
 
- Right now it simply loads "mario(E).nes" from the current folder. A nice GUI is yet to come.
+ Right now it simply loads "mario(E).nes" from the current folder unless you provide a filename. A nice GUI is yet to come.
 
 Controls are currently hardcoded (in [**src/input.cpp**](src/input.cpp) and [**src/sdl_backend.cpp**](src/sdl_backend.cpp)) as follows:
 
@@ -20,7 +20,6 @@ Controls are currently hardcoded (in [**src/input.cpp**](src/input.cpp) and [**s
   <tr><td>B           </td><td>Z            </td></tr>
   <tr><td>Start       </td><td>Return       </td></tr>
   <tr><td>Select      </td><td>Right shift  </td></tr>
-  <tr><td>Rewind      </td><td>R (hold down)</td></tr>
   <tr><td>Save state  </td><td>S            </td></tr>
   <tr><td>Load state  </td><td>L            </td></tr>
   <tr><td>(Soft) reset</td><td>F5           </td></tr>

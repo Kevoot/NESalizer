@@ -7,27 +7,31 @@
 #include "sdl_backend.h"
 #include "timing.h"
 
-//
-// Audio ring buffer
-//
-
 // Make room for 1/6th seconds of delay
 static int16_t buf[GE_POW_2(sample_rate/6)];
-// Indices from start_index up to but not including end_index (modulo wrapping)
-// contain samples
 static size_t start_index = 0, end_index = 0;
-// True if the last operation was a read. Indicates whether
-// start_index == end_index means the buffer is full or empty.
 static bool prev_op_was_read = true;
+static blip_t *blip;
+
+// We try to keep the internal audio buffer 50% full for maximum protection
+// against under- and overflow. To maintain that level, we adjust the playback
+// rate slightly depending on the current buffer fill level. This sets the
+// maximum adjustment allowed (1.5%), though typical adjustments will be much
+// smaller.
+double const max_adjust = 0.015;
+static bool playback_started;
+
+// Leave some extra room in the buffer to allow audio to be slowed down. Assume
+// PAL, which gives a slightly larger buffer than NTSC. (The expression is
+// equivalent to 1.3*sample_rate/frames_per_second, but a compile-time constant
+// in C++03.)
+// TODO: Make dependent on max_adjust.
+static int16_t blip_samples[1300*sample_rate/pal_milliframes_per_second];
+
 
 void read_samples(int16_t *dst, size_t len) {
+    
     assert(start_index < ARRAY_LEN(buf));
-
-    // Move samples from the ring buffer to 'dst' by memcpy()ing contiguous
-    // segments
-
-    // How many contiguous bytes are available...?
-
     size_t contig_avail;
     if ((start_index == end_index && !prev_op_was_read) || start_index > end_index)
         contig_avail = ARRAY_LEN(buf) - start_index;
@@ -35,7 +39,6 @@ void read_samples(int16_t *dst, size_t len) {
         contig_avail = end_index - start_index;
 
     prev_op_was_read = true;
-
     if (contig_avail >= len) {
         // ...as many as we need. Copy it all in one go.
         memcpy(dst, buf + start_index, sizeof(*buf)*len);
@@ -68,13 +71,7 @@ void read_samples(int16_t *dst, size_t len) {
     }
 }
 
-// Writes up to 'len' samples from 'src' to the ring buffer. In case of
-// overflow, writes as many samples as possible and returns 'false'.
 static void write_samples(int16_t const *src, size_t len) {
-    // Copy samples from 'src' to the ring buffer by memcpy()ing contiguous
-    // segments
-
-    // How many contiguous bytes are available...?
 
     size_t contig_avail;
     if (start_index < end_index || (start_index == end_index && prev_op_was_read))
@@ -115,36 +112,10 @@ static void write_samples(int16_t const *src, size_t len) {
     }
 }
 
-// Returns the fill level of the ring buffer as a double in the range 0.0-1.0.
 static double fill_level() {
     double const data_len = (end_index - start_index) % ARRAY_LEN(buf);
     return data_len/ARRAY_LEN(buf);
 }
-
-//
-// Initialization, resampling, and buffer management
-//
-
-static blip_t *blip;
-
-// We try to keep the internal audio buffer 50% full for maximum protection
-// against under- and overflow. To maintain that level, we adjust the playback
-// rate slightly depending on the current buffer fill level. This sets the
-// maximum adjustment allowed (1.5%), though typical adjustments will be much
-// smaller.
-double const max_adjust = 0.015;
-
-// To avoid an immediate underflow, we wait for the audio buffer to fill up
-// before we start playing. This is set true when we're happy with the fill
-// level.
-static bool playback_started;
-
-// Leave some extra room in the buffer to allow audio to be slowed down. Assume
-// PAL, which gives a slightly larger buffer than NTSC. (The expression is
-// equivalent to 1.3*sample_rate/frames_per_second, but a compile-time constant
-// in C++03.)
-// TODO: Make dependent on max_adjust.
-static int16_t blip_samples[1300*sample_rate/pal_milliframes_per_second];
 
 void set_audio_signal_level(int16_t level) {
     // TODO: Do something to reduce the initial pop here?
