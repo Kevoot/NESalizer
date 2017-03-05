@@ -10,20 +10,8 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/include/controller.h</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/cpu.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/main.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/save_states.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/common.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/ppu.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/apu.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/Makefile</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/include/sdl_backend.h</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/include/common.h</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/include/input.h</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/input.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/controller.cpp</file>
-            <file>file:/home/danny/steamlink-sdk/examples/NESalizer/src/sdl_backend.cpp</file>
+            <file>file:/media/Storage/steamlink-sdk/examples/NESalizer/src/sdl_backend.cpp</file>
+            <file>file:/media/Storage/steamlink-sdk/examples/NESalizer/src/audio.cpp</file>
         </group>
     </open-files>
 </project-private>

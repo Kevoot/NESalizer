@@ -8,33 +8,22 @@
 #include "sdl_backend.h"
 #include <SDL.h>
 
-//
-// Video
-//
-
 // Each pixel is scaled to scale_factor*scale_factor pixels
 unsigned const scale_factor = 3;
 
 static SDL_Window   *screen;
 static SDL_Renderer *renderer;
 static SDL_Texture  *screen_tex;
-
-//
-// TODO: This could probably be optimized to eliminate some copying and format
-// conversions.
-
 static Uint32 *front_buffer;
 static Uint32 *back_buffer;
-
 static SDL_mutex *frame_lock;
 static SDL_cond  *frame_available_cond;
 static bool ready_to_draw_new_frame;
 static bool frame_available;
-
 static bool pending_sdl_thread_exit;
 SDL_mutex   *event_lock;
 
-Uint16 const sdl_audio_buffer_size = 5000;
+Uint16 const sdl_audio_buffer_size = 2048;
 static SDL_AudioDeviceID audio_device_id;
 
 struct Controller_t
@@ -313,6 +302,56 @@ static void process_events() {
 		joyprocess(event.cbutton.button, SDL_FALSE, controller_index);
 		}
 		break;
+            case SDL_KEYDOWN:
+                switch(event.key.keysym.sym)
+                {
+                    case SDLK_RETURN:
+                        break;
+                    case SDLK_BACKSPACE:
+                        break;
+                    case SDLK_UP:
+                        break;
+                    case SDLK_DOWN:
+                        break;
+                    case SDLK_LEFT:
+                        break;
+                    case SDLK_RIGHT:
+                        break;
+                    case SDLK_z:
+                        break;
+                    case SDLK_x:
+                        break;
+                }
+                break;
+            case SDL_KEYUP:
+                switch(event.key.keysym.sym)
+                {
+                    case SDLK_DELETE:
+                        break;
+                    case SDLK_F1:
+                        break;
+                    case SDLK_F2:
+                        break;
+                    case SDLK_ESCAPE:
+                        break;
+                    case SDLK_RETURN:
+                        break;
+                    case SDLK_BACKSPACE:
+                        break;
+                    case SDLK_UP:
+                        break;
+                    case SDLK_DOWN:
+                        break;
+                    case SDLK_LEFT:
+                        break;
+                    case SDLK_RIGHT:
+                        break;
+                    case SDLK_z:
+                        break;
+                    case SDLK_x:
+                        break;
+                }
+                break;
         }
     SDL_UnlockMutex(event_lock);
 }
@@ -361,7 +400,7 @@ void init_sdl() {
         SDL_WINDOW_FULLSCREEN or SDL_WINDOW_OPENGL)),
       "failed to create window: %s", SDL_GetError());
 
-    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED)),
+    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC )),
       "failed to create rendering context: %s", SDL_GetError());
 
     // Display some information about the renderer
@@ -402,16 +441,22 @@ void init_sdl() {
 
     // Audio
     SDL_AudioSpec want;
-    SDL_zero(want);
+    SDL_AudioSpec got;
+    //SDL_zero(want);
+    
     want.freq     = sample_rate;
-    //want.format   = AUDIO_S16SYS;
-    want.format   = AUDIO_U16LSB;
+    want.format   = AUDIO_S16LSB;
     want.channels = 1;
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;
 
-    audio_device_id = SDL_OpenAudioDevice(0, 0, &want, 0, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
-
+    audio_device_id = SDL_OpenAudioDevice(0, 0, &want, &got, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    
+    printf("freq: %i, %i\n", want.freq, got.freq);
+    printf("format: %i, %i\n", want.format, got.format);
+    printf("channels: %i, %i\n", want.channels, got.channels);
+    printf("samples: %i, %i\n", want.samples, got.samples);
+    
     // Input
     SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
     SDL_EventState(SDL_MOUSEBUTTONUP  , SDL_IGNORE);
