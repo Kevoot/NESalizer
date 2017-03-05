@@ -65,7 +65,7 @@
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
           <buildCommand>./BlankMake.sh</buildCommand>
-          <cleanCommand></cleanCommand>
+          <cleanCommand>./CleanBuild.sh</cleanCommand>
           <executablePath>build/nesalizer</executablePath>
           <cTool>
             <incDir>
