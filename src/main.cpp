@@ -6,7 +6,10 @@
 #include "mapper.h"
 #include "rom.h"
 #include "sdl_backend.h"
-#include <SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <switch.h>
 
 char const *program_name;
 
@@ -16,6 +19,15 @@ static int emulation_thread(void*) {
 }
 
 int main(int argc, char *argv[]) {
+    gfxInitDefault();
+    consoleInit(NULL);
+    socketInitializeDefault();
+    nxlinkStdio();
+    printf("nxlink started\n");
+    gfxFlushBuffers();
+    gfxSwapBuffers();
+    gfxWaitForVsync();
+    gfxExit();
  
     install_fatal_signal_handlers();
     init_apu();
@@ -24,7 +36,7 @@ int main(int argc, char *argv[]) {
     // Not figured out how to pass arguments on the steamlink yet.
     program_name = argv[0] ? argv[0] : "nesalizer";
     if (argc != 2) {
-        load_rom("mario(E).nes", true);   
+        load_rom("loz.nes", true);   
     }
     else 
     {

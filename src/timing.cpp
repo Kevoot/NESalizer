@@ -3,6 +3,7 @@
 #include "mapper.h"
 #include "rom.h"
 #include "timing.h"
+#include <switch.h>
 
 double cpu_clock_rate;
 double ppu_clock_rate;
@@ -43,12 +44,12 @@ void init_timing() {
 }
 
 void sleep_till_end_of_frame() {
-    add_to_timespec(clock_previous, 1e9/ppu_fps);
+    /*add_to_timespec(clock_previous, 1e9/ppu_fps);
 again:
     int const res =
-      clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &clock_previous, 0);
+        svcSleepThread(clock_previous.tv_nsec);
     if (res == EINTR) goto again;
     errno_val_fail_if(res != 0, res, "failed to sleep with clock_nanosleep()");
     errno_fail_if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1,
-      "failed to fetch synchronization timestamp from clock_gettime()");
+      "failed to fetch synchronization timestamp from clock_gettime()");*/
 }

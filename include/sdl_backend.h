@@ -1,6 +1,8 @@
 // Video, audio, and input backend. Uses SDL2.
 
-#include <SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL.h>
 
 void init_sdl();
 void deinit_sdl();

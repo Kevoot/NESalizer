@@ -772,6 +772,7 @@ static void process_pending_events() {
 
     if (pending_frame_completion) {
         pending_frame_completion = false;
+        printf("Drawing Frame\n");
         draw_frame();
         end_audio_frame();
         begin_audio_frame();

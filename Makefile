@@ -1,66 +1,225 @@
-EXECUTABLE        = nesalizer
-BUILD_DIR         = build
-ifeq ($(origin CXX), default)
-  CXX             = g++
+#---------------------------------------------------------------------------------
+.SUFFIXES:
+#---------------------------------------------------------------------------------
+
+ifeq ($(strip $(DEVKITPRO)),)
+$(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
 endif
-ifeq ($(origin CC), default)
-  CC              = gcc
+
+TOPDIR ?= $(CURDIR)
+include $(DEVKITPRO)/libnx/switch_rules
+
+#---------------------------------------------------------------------------------
+# TARGET is the name of the output
+# BUILD is the directory where object files & intermediate files will be placed
+# SOURCES is a list of directories containing source code
+# DATA is a list of directories containing data files
+# INCLUDES is a list of directories containing header files
+# EXEFS_SRC is the optional input directory containing data copied into exefs, if anything this normally should only contain "main.npdm".
+# ROMFS is the directory containing data to be added to RomFS, relative to the Makefile (Optional)
+
+# NO_ICON: if set to anything, do not use icon.
+# NO_NACP: if set to anything, no .nacp file is generated.
+# APP_TITLE is the name of the app stored in the .nacp file (Optional)
+# APP_AUTHOR is the author of the app stored in the .nacp file (Optional)
+# APP_VERSION is the version of the app stored in the .nacp file (Optional)
+# APP_TITLEID is the titleID of the app stored in the .nacp file (Optional)
+# ICON is the filename of the icon (.jpg), relative to the project folder.
+#   If not set, it attempts to use one of the following (in this order):
+#     - <Project name>.jpg
+#     - icon.jpg
+#     - <libnx folder>/default_icon.jpg
+#---------------------------------------------------------------------------------
+TARGET		:=	NESalizer
+BUILD		:=	build
+
+EXT_LIBS	:= $(sort $(dir $(wildcard libraries/*/)))
+INC_OBJS	:= $(sort $(dir $(wildcard include/objects/*/)))
+SRC_OBJS	:= $(sort $(dir $(wildcard source/objects/*/)))
+
+SOURCES		:=	src \
+				$(SRC_OBJS) \
+				$(EXT_LIBS)
+
+DATA		:=	src/scripts
+
+INCLUDES	:=	include \
+				$(INC_OBJS) \
+				$(EXT_LIBS)
+
+EXEFS_SRC	:=	exefs_src
+
+APP_TITLE	:= NESalizer
+APP_AUTHOR	:= Kevoot
+APP_VERSION	:= 1.0
+APP_TITLEID	:= 1249
+
+ICON		:= icon.jpg
+
+#---------------------------------------------------------------------------------
+# options for code generation
+#---------------------------------------------------------------------------------
+ARCH	:=	-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
+
+CFLAGS	:=	-g -Wall -O3 -ffunction-sections -fdata-sections \
+			-ftls-model=local-exec -ffast-math \
+			`sdl2-config --cflags` `freetype-config --cflags` \
+			$(ARCH) $(DEFINES) $(INCLUDE) -D__SWITCH__
+
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fexceptions -std=gnu++11
+
+ASFLAGS	:=	-g $(ARCH)
+LDFLAGS	=	-g $(ARCH) -Wl,-Map,$(notdir $*.map)
+
+LIBS := -lSDL2_mixer -lmpg123 -lSDL2_ttf -lSDL2_gfx -lSDL2_image -lpng -ljpeg \
+		`sdl2-config --libs` `freetype-config --libs` \
+		-specs=$(DEVKITPRO)/libnx/switch.specs -lnx
+#---------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level containing
+# include and lib
+#---------------------------------------------------------------------------------
+LIBDIRS	:= $(PORTLIBS) $(LIBNX)
+
+
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
+ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export TOPDIR	:=	$(CURDIR)
+
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
+
+CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+
+#---------------------------------------------------------------------------------
+# use CXX for linking C++ projects, CC for standard C
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(CPPFILES)),)
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CC)
+#---------------------------------------------------------------------------------
+else
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CXX)
+#---------------------------------------------------------------------------------
 endif
-CONF              = release
-BACKTRACE_SUPPORT = 1
-q = @
-is_clang := $(if $(findstring clang,$(shell "$(CXX)" -v 2>&1)),1,0)
-cpp_sources = audio apu blip_buf common controller cpu input main md5   \
-  mapper mapper_0 mapper_1 mapper_2 mapper_3 mapper_4 mapper_5 mapper_7 \
-  mapper_9 mapper_10 mapper_11 mapper_13 mapper_28 mapper_71 mapper_232 \
-  ppu rom save_states sdl_backend timing
-c_sources = tables
-cpp_objects = $(addprefix $(BUILD_DIR)/,$(cpp_sources:=.o))
-c_objects   = $(addprefix $(BUILD_DIR)/,$(c_sources:=.o))
-objects     = $(c_objects) $(cpp_objects)
-deps        = $(addprefix $(BUILD_DIR)/,$(c_sources:=.d) $(cpp_sources:=.d))
-compile_flags := -I$(MARVELL_ROOTFS)/usr/include/SDL2 -DHAVE_OPENGLES2
-LDLIBS :=  -lSDL2 -lSDL2_test -lrt -lm
-#optimizations = -O3 -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 
-#optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -flto -fno-exceptions -mtune=arm7 
-optimizations = -Ofast -ffast-math -funsafe-loop-optimizations -fsingle-precision-constant -flto -fno-exceptions -mtune=arm7 -mfpu=vfpv3 -mfpu=neon -mhard-float -ffinite-math-only -funsafe-math-optimizations
-warnings = -Wall -Wextra -Wdisabled-optimization -Wmissing-format-attribute -Wno-switch -Wredundant-decls -Wuninitialized -Wno-return-type
-ifeq ($(filter debug release release-debug,$(CONF)),)
-    $(error unknown configuration "$(CONF)")
-else ifneq ($(MAKECMDGOALS),clean)
-    ifndef MAKE_RESTARTS
-        $(info Using configuration "$(CONF)")
-    endif
+#---------------------------------------------------------------------------------
+
+export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
+			$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+			-I$(CURDIR)/$(BUILD)
+
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+
+export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
+
+ifeq ($(strip $(ICON)),)
+	icons := $(wildcard *.jpg)
+	ifneq (,$(findstring $(TARGET).jpg,$(icons)))
+		export APP_ICON := $(TOPDIR)/$(TARGET).jpg
+	else
+		ifneq (,$(findstring icon.jpg,$(icons)))
+			export APP_ICON := $(TOPDIR)/icon.jpg
+		endif
+	endif
+else
+	export APP_ICON := $(TOPDIR)/$(ICON)
 endif
-ifneq ($(findstring debug,$(CONF)),)
-    compile_flags += -ggdb
+
+ifeq ($(strip $(NO_ICON)),)
+	export NROFLAGS += --icon=$(APP_ICON)
 endif
-ifneq ($(findstring release,$(CONF)),)
-    compile_flags += $(optimizations) -DOPTIMIZING
-    link_flags    += $(optimizations) -fuse-linker-plugin
+
+ifeq ($(strip $(NO_NACP)),)
+	export NROFLAGS += --nacp=$(CURDIR)/$(TARGET).nacp
 endif
-ifeq ($(BACKTRACE_SUPPORT),1)
-    link_flags += -Wl,-export-dynamic
+
+ifneq ($(APP_TITLEID),)
+	export NACPFLAGS += --titleid=$(APP_TITLEID)
 endif
-compile_flags += $(warnings) -D_FILE_OFFSET_BITS=64
-$(BUILD_DIR)/$(EXECUTABLE): $(objects)
-	@echo Linking $@
-	$(q)$(CXX) $(link_flags) $^ $(LDLIBS) -o $@
-$(cpp_objects): $(BUILD_DIR)/%.o: src/%.cpp
-	@echo Compiling $<
-	$(q)$(CXX) -c -Iinclude $(compile_flags) $< -o $@
-$(c_objects): $(BUILD_DIR)/%.o: src/%.c
-	@echo Compiling $<
-	$(q)$(CC) -c -Iinclude -std=c11 $(compile_flags) $< -o $@
-$(deps): $(BUILD_DIR)/%.d: src/%.cpp
-	@set -e; rm -f $@;                                                 \
-	  $(CXX) -MM -Iinclude $(shell sdl2-config --cflags) $< > $@.$$$$; \
-	  sed 's,\($*\)\.o[ :]*,$(BUILD_DIR)/\1.o $@ : ,g' < $@.$$$$ > $@; \
-	  rm -f $@.$$$$
-ifneq ($(MAKECMDGOALS),clean)
-    -include $(deps)
+
+ifneq ($(ROMFS),)
+	export NROFLAGS += --romfsdir=$(CURDIR)/$(ROMFS)
 endif
-$(BUILD_DIR): ; $(q)mkdir $(BUILD_DIR)
-$(objects) $(deps): | $(BUILD_DIR)
-.PHONY: clean
-clean: ; $(q)-rm -rf $(BUILD_DIR)
+
+.PHONY: $(BUILD) clean all
+
+#---------------------------------------------------------------------------------
+all: $(BUILD)
+
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+#---------------------------------------------------------------------------------
+clean:
+	@echo clean ...
+	@rm -fr $(BUILD) $(TARGET).pfs0 $(TARGET).nso $(TARGET).nro $(TARGET).nacp $(TARGET).elf
+
+
+#---------------------------------------------------------------------------------
+else
+.PHONY:	all
+
+DEPENDS	:=	$(OFILES:.o=.d)
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+all	:	$(OUTPUT).pfs0 $(OUTPUT).nro
+
+$(OUTPUT).pfs0	:	$(OUTPUT).nso
+
+$(OUTPUT).nso	:	$(OUTPUT).elf
+
+ifeq ($(strip $(NO_NACP)),)
+$(OUTPUT).nro	:	$(OUTPUT).elf $(OUTPUT).nacp
+else
+$(OUTPUT).nro	:	$(OUTPUT).elf
+endif
+
+$(OUTPUT).elf	:	$(OFILES)
+#---------------------------------------------------------------------------------
+# you need a rule like this for each extension you use as binary data
+#---------------------------------------------------------------------------------
+%.bin.o	:	%.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+#---------------------------------------------------------------------------------
+%.lua.o	:	%.lua
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+#---------------------------------------------------------------------------------
+%.ttf.o	:	%.ttf
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+#---------------------------------------------------------------------------------
+%.png.o	:	%.png
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+-include $(DEPENDS)
+
+#---------------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------------

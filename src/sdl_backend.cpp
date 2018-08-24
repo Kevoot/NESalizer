@@ -6,7 +6,9 @@
 
 #include "save_states.h"
 #include "sdl_backend.h"
-#include <SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL.h>
 
 // Each pixel is scaled to scale_factor*scale_factor pixels
 unsigned const scale_factor = 3;
@@ -25,6 +27,9 @@ SDL_mutex   *event_lock;
 
 Uint16 const sdl_audio_buffer_size = 2048;
 static SDL_AudioDeviceID audio_device_id;
+
+const unsigned WIDTH = 256;
+const unsigned HEIGHT = 240;
 
 struct Controller_t
 {
@@ -360,6 +365,7 @@ void sdl_thread() {
     for (;;) {
         // Wait for the emulation thread to signal that a frame has completed
         SDL_LockMutex(frame_lock);
+        printf("Got Emulation thread signal\n");
         ready_to_draw_new_frame = true;
         while (!frame_available && !pending_sdl_thread_exit)
             SDL_CondWait(frame_available_cond, frame_lock);
@@ -371,6 +377,7 @@ void sdl_thread() {
         SDL_UnlockMutex(frame_lock);
         process_events();
         // Draw the new frame
+        printf("Drawing new frame\n");
         fail_if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32)),
           "failed to update screen texture: %s", SDL_GetError());
         fail_if(SDL_RenderCopy(renderer, screen_tex, 0, 0),
@@ -388,19 +395,19 @@ void exit_sdl_thread() {
 
 // Initialization and de-initialization
 void init_sdl() {
-
-    fail_if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0,
+    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
 
     fail_if(!(screen =
       SDL_CreateWindow(
-        "Nesalizer",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        scale_factor*256, scale_factor*240,
-        SDL_WINDOW_FULLSCREEN or SDL_WINDOW_OPENGL)),
+        NULL,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        WIDTH, HEIGHT,
+        SDL_WINDOW_FULLSCREEN)),
       "failed to create window: %s", SDL_GetError());
 
-    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC )),
+    
+    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_TARGETTEXTURE )),
       "failed to create rendering context: %s", SDL_GetError());
 
     // Display some information about the renderer
@@ -425,7 +432,7 @@ void init_sdl() {
         putchar('\n');
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     fail_if(!(screen_tex =
       SDL_CreateTexture(
         renderer,
@@ -450,6 +457,7 @@ void init_sdl() {
     want.samples  = sdl_audio_buffer_size;
     want.callback = audio_callback;
 
+    printf("SDL_OpenAudioDevice\n");
     audio_device_id = SDL_OpenAudioDevice(0, 0, &want, &got, SDL_AUDIO_ALLOW_ANY_CHANGE);
     
     printf("freq: %i, %i\n", want.freq, got.freq);
@@ -458,6 +466,7 @@ void init_sdl() {
     printf("samples: %i, %i\n", want.samples, got.samples);
     
     // Input
+    printf("SDL_EventState\n");
     SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
     SDL_EventState(SDL_MOUSEBUTTONUP  , SDL_IGNORE);
     SDL_EventState(SDL_MOUSEMOTION    , SDL_IGNORE);
@@ -466,8 +475,10 @@ void init_sdl() {
     SDL_EventState(SDL_WINDOWEVENT, SDL_IGNORE);
 
     // SDL thread synchronization
+    printf("SDL_CreateMutex\n");
     fail_if(!(event_lock = SDL_CreateMutex()), "failed to create event mutex: %s", SDL_GetError());
     fail_if(!(frame_lock = SDL_CreateMutex()), "failed to create frame mutex: %s", SDL_GetError());
+    printf("SDL_CreateCond()\n");
     fail_if(!(frame_available_cond = SDL_CreateCond()),"failed to create frame condition variable: %s", SDL_GetError());
 }
 
