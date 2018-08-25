@@ -4,10 +4,15 @@
 #include "rom.h"
 #include "timing.h"
 #include <switch.h>
+#include <SDL2/SDL.h>
+#include <time.h>
 
 double cpu_clock_rate;
 double ppu_clock_rate;
 double ppu_fps;
+uint32_t frameStart = 0, frameTime = 0;
+int FPS;
+int DELAY;
 
 void init_timing_for_rom() {
     if (is_pal) {
@@ -22,6 +27,8 @@ void init_timing_for_rom() {
         ppu_clock_rate           = master_clock_rate/4.0; // ~5.37 MHz
         ppu_fps                  = ppu_clock_rate/(341*261 + 340.5); // ~60.1 FPS
     }
+    FPS = ppu_fps;
+    DELAY = 20.0f / FPS;
 }
 
 // TODO: Use SDL_Delay() instead? Higher sleep precision is good for audio
@@ -44,12 +51,9 @@ void init_timing() {
 }
 
 void sleep_till_end_of_frame() {
-    /*add_to_timespec(clock_previous, 1e9/ppu_fps);
+    add_to_timespec(clock_previous, 1e9/ppu_fps);
 again:
-    int const res =
-        svcSleepThread(clock_previous.tv_nsec);
-    if (res == EINTR) goto again;
-    errno_val_fail_if(res != 0, res, "failed to sleep with clock_nanosleep()");
+    svcSleepThread(clock_previous.tv_nsec / 1000000);
     errno_fail_if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1,
-      "failed to fetch synchronization timestamp from clock_gettime()");*/
+      "failed to fetch synchronization timestamp from clock_gettime()");
 }

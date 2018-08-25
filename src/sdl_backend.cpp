@@ -10,6 +10,25 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL.h>
 
+#define JOY_A     0
+#define JOY_B     1
+#define JOY_X     2
+#define JOY_Y     3
+#define JOY_L     6
+#define JOY_R     7
+#define JOY_ZL    8
+#define JOY_ZR    9
+#define JOY_PLUS  10
+#define JOY_MINUS 11
+#define JOY_LEFT  12
+#define JOY_UP    13
+#define JOY_RIGHT 14
+#define JOY_DOWN  15
+#define JOY_LSTICK_LEFT 16
+#define JOY_LSTICK_UP 17
+#define JOY_LSTICK_RIGHT 18
+#define JOY_LSTICK_DOWN 19
+
 // Each pixel is scaled to scale_factor*scale_factor pixels
 unsigned const scale_factor = 3;
 
@@ -140,7 +159,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
 {
     switch(button)
     {
-        case  SDL_CONTROLLER_BUTTON_A:
+        case JOY_A:
             if (pressed)
             {
                 set_button_state(njoy,0);
@@ -150,7 +169,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,0);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_B:
+        case JOY_B:
             if (pressed)
             {
                 set_button_state(njoy,1);
@@ -160,27 +179,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,1);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_X:
-            if (pressed)
-            {
-            /////////////////////////////////////
-            }
-            else
-            {
-            //////////////////////////////////////    
-            }
-            break;
-        case  SDL_CONTROLLER_BUTTON_Y:
-            if (pressed)
-            {
-            ///////////////////////////////////////
-            }
-            else
-            {
-            ///////////////////////////////////////    
-            }
-            break;
-        case  SDL_CONTROLLER_BUTTON_BACK:
+        case  JOY_MINUS:
             if (pressed)
             {
                 set_button_state(njoy,2);
@@ -190,7 +189,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,2);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_START:
+        case  JOY_PLUS:
             if (pressed)
             {
                 set_button_state(njoy,3);
@@ -200,14 +199,14 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,3);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_GUIDE:
+        case  JOY_X:
             if (pressed){
                 // EXIT NESalizer
                 exit_sdl_thread();
                 deinit_sdl();
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_DPAD_UP:
+        case  JOY_UP:
             if (pressed)
             {
                 set_button_state(njoy,4);
@@ -217,7 +216,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,4);
             }
             break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+        case JOY_DOWN:
             if (pressed)
             {
                 set_button_state(njoy,5);
@@ -227,7 +226,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,5);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+        case  JOY_LEFT:
             if (pressed)
             {
                 set_button_state(njoy,6);
@@ -237,7 +236,7 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,6);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+        case  JOY_RIGHT:
             if (pressed)
             {
                 set_button_state(njoy,7);
@@ -247,13 +246,13 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
                 clear_button_state(njoy,7);
             }
             break;
-        case  SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+        case  JOY_ZL:
             if (pressed){
                 // Load Save-state
                 load_state();
             }
             break;
-        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+        case JOY_ZR:
             if (pressed){
                 // Save State
                 save_state();
@@ -365,7 +364,6 @@ void sdl_thread() {
     for (;;) {
         // Wait for the emulation thread to signal that a frame has completed
         SDL_LockMutex(frame_lock);
-        printf("Got Emulation thread signal\n");
         ready_to_draw_new_frame = true;
         while (!frame_available && !pending_sdl_thread_exit)
             SDL_CondWait(frame_available_cond, frame_lock);
@@ -377,7 +375,6 @@ void sdl_thread() {
         SDL_UnlockMutex(frame_lock);
         process_events();
         // Draw the new frame
-        printf("Drawing new frame\n");
         fail_if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32)),
           "failed to update screen texture: %s", SDL_GetError());
         fail_if(SDL_RenderCopy(renderer, screen_tex, 0, 0),
@@ -395,23 +392,25 @@ void exit_sdl_thread() {
 
 // Initialization and de-initialization
 void init_sdl() {
-    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0,
+    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
 
     fail_if(!(screen =
       SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        WIDTH, HEIGHT,
+        256, 240,
         SDL_WINDOW_FULLSCREEN)),
       "failed to create window: %s", SDL_GetError());
 
     
+    printf("SDL_CreateRenderer\n");
     fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_TARGETTEXTURE )),
       "failed to create rendering context: %s", SDL_GetError());
 
     // Display some information about the renderer
     SDL_RendererInfo renderer_info;
+    printf("SDL_GetRendererInfo\n");
     if (SDL_GetRendererInfo(renderer, &renderer_info))
         puts("Failed to get renderer information from SDL");
     else {
@@ -432,7 +431,9 @@ void init_sdl() {
         putchar('\n');
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    printf("SDL_SetHint\n");
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+    printf("SDL_CreateTexture\n");
     fail_if(!(screen_tex =
       SDL_CreateTexture(
         renderer,
