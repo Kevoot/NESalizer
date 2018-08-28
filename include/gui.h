@@ -30,6 +30,9 @@ bool is_paused();
 void render();
 void update_menu(u8 select);
 
+void reload_rom();
+void unload_rom();
+
 u8 get_joypad_state(int n);
 void new_frame(u32* pixels);
 void set_size(int mul);

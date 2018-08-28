@@ -19,6 +19,8 @@ bool chr_is_ram;
 uint8_t *wram_base;
 unsigned wram_8k_banks;
 
+char const *fname;
+
 bool is_pal;
 
 bool has_battery;
@@ -42,8 +44,14 @@ char const *const mirroring_to_str[N_MIRRORING_MODES] =
 
 static void do_rom_specific_overrides();
 
+void reload_rom() {
+    load_rom(fname, false);
+}
+
 void load_rom(char const *filename, bool print_info) {
+    fname = filename;
     #define PRINT_INFO(...) do { if (print_info) printf(__VA_ARGS__); } while(0)
+    printf("Loading ROM\n");
 
     size_t rom_buf_size;
     rom_buf = get_file_buffer(filename, rom_buf_size);

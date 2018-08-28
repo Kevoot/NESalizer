@@ -70,6 +70,8 @@ struct Controller_t
 };
 static Controller_t controllers[2];
 
+static void process_events();
+
 void lock_audio() { SDL_LockAudioDevice(audio_device_id); }
 void unlock_audio() { SDL_UnlockAudioDevice(audio_device_id); }
 
@@ -227,21 +229,18 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
         clear_button_state(0, JOY_RIGHT);
     }
     if(SDL_JoystickGetButton(joystick[0], JOY_ZL)) {
-        save_state();
-        SDL_LockMutex(event_lock);
-        SDL_LockMutex(frame_lock);
         GUI::toggle_pause();
         while(GUI::is_paused()) {
-
+            printf("IN LOOP\n");
+            GUI::render();
+            process_events();
+            SDL_Delay(50);
+            GUI::update_menu(read_button_states(0));
         }
-        // svcSleepThread(1000000);
-        SDL_UnlockMutex(frame_lock);
-        SDL_UnlockMutex(event_lock);
-        load_state();
     }
-    if(SDL_JoystickGetButton(joystick[0], JOY_ZR)) {
+    /*if(SDL_JoystickGetButton(joystick[0], JOY_ZR)) {
         // load_state();
-    }
+    }*/
 }
 
 uint8_t get_menu_joypad(int n)
@@ -484,6 +483,7 @@ void init_sdl() {
     while(GUI::is_paused()) {
         GUI::render();
         process_events();
+        SDL_Delay(50);
         GUI::update_menu(read_button_states(0));
     };
 }

@@ -1,3 +1,4 @@
+#pragma once
 // Loading and unloading of ROM files
 
 // Points to the start of the PRG data within the ROM image
@@ -28,6 +29,9 @@ extern Mapper_fns mapper_fns;
 // Loads a ROM file. If 'print_info' is true, information about the cart is
 // printed to stdout.
 void load_rom(char const *filename, bool print_info);
+
+// Reloads rom saved from last load
+void reload_rom();
 
 // Frees resources associated with the ROM
 void unload_rom();

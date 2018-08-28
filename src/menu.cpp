@@ -24,6 +24,7 @@ Entry::~Entry()
 void Entry::setLabel(string label)
 {
     this->label = label;
+    printf("Setting label for %s", label);
 
     if (whiteTexture != nullptr) SDL_DestroyTexture(whiteTexture);
     if (redTexture   != nullptr) SDL_DestroyTexture(redTexture);
@@ -34,7 +35,14 @@ void Entry::setLabel(string label)
 
 void Entry::render()
 {
+    printf("Entry render()\n");
     render_texture(selected ? redTexture : whiteTexture, getX(), getY());
+    if(selected) {
+        printf("Rendering texture as red\n");
+    }
+    else {
+        printf("Rendering texture as white\n");
+    }
 }
 
 
@@ -80,13 +88,11 @@ void Menu::update(u8 select)
     printf("In menu update, select: %d\n", select);
     int oldCursor = cursor;
 
-    if ((select == 16) and cursor < entries.size() - 1) {
+    if ((select == 32) and cursor < entries.size() - 1) {
         cursor++;
-        this->render();
     }
-    else if ((select == 32) and cursor > 0) {
+    else if ((select == 16) and cursor > 0) {
         cursor--;
-        this->render();
     }
 
     entries[oldCursor]->unselect();
@@ -94,10 +100,13 @@ void Menu::update(u8 select)
 
     if (select == 1)
         entries[cursor]->trigger();
+
+    printf("Cursor pos: %d", cursor);
 }
 
 void Menu::render()
 {
+    printf("Rendering Menu item\n");
     for (auto entry : entries)
         entry->render();
 }
@@ -105,10 +114,12 @@ void Menu::render()
 
 void FileMenu::change_dir(string dir)
 {
+    printf("In change_dir\n");
     clear();
 
     struct dirent* dirp;
     DIR* dp = opendir(dir.c_str());
+    printf("Opened sdmc://\n");
 
     while ((dirp = readdir(dp)) != NULL)
     {
@@ -126,7 +137,10 @@ void FileMenu::change_dir(string dir)
         else if (name.size() > 4 and name.substr(name.size() - 4) == ".nes")
         {
             add(new Entry(name,
-                          [=]{ load_rom(path.c_str(), false); toggle_pause(); },
+                          [=]{ 
+                              printf("\n\nLOADING ROM\n\n");
+                              load_rom(path.c_str(), false); 
+                              toggle_pause(); },
                           0));
         }
     }
@@ -135,9 +149,11 @@ void FileMenu::change_dir(string dir)
 
 FileMenu::FileMenu()
 {
+    printf("In fileMenu constructor\n");
     char cwd[512];
 
-    change_dir(getcwd(cwd, 512));
+    // change_dir(getcwd(cwd, 512));
+    change_dir("sdmc://");
 }
 
 

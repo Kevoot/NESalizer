@@ -1,7 +1,9 @@
 #include <csignal>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <switch.h>
 #include "menu.h"
+#include "save_states.h"
 
 namespace GUI {
 
@@ -70,16 +72,23 @@ void updateVideoMenu()
     videoMenu->add(new Entry("Size 1x", [] { set_size(1); }));
     videoMenu->add(new Entry("Size 2x", [] { set_size(2); }));
     videoMenu->add(new Entry("Size 3x", [] { set_size(3); }));
-    /*videoMenu->add(new Entry((quality), []{ set_render_quality((currentRenderQuality + 1) % 3);
+    /* videoMenu->add(new Entry((quality), []{ set_render_quality((currentRenderQuality + 1) % 3);
                                              updateVideoMenu();
                                              menu = videoMenu;
-                                             }));
-    */
+                                             }));*/
 }
 
 bool is_paused() {
     if(pause) return true;
     else return false;
+}
+
+void reload_rom() {
+    reload_rom();
+}
+
+void unload_rom() {
+    unload_rom();
 }
 
 void init(SDL_Window * scr, SDL_Renderer * rend) {
@@ -140,14 +149,24 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
 
     // Menus:
     mainMenu = new Menu;
-    mainMenu->add(new Entry("Load ROM", [] { menu = fileMenu; }));
+    mainMenu->add(new Entry("Load ROM", [] {
+        printf("Load ROM selected");
+        svcSleepThread(10000);
+        menu = fileMenu; 
+    }));
+    mainMenu->add(new Entry("Save State", [] {
+        save_state();
+    }));
+    mainMenu->add(new Entry("Load State", [] {
+        load_state();
+    }));
     mainMenu->add(new Entry("Settings", [] { menu = settingsMenu; }));
     mainMenu->add(new Entry("Exit", [] { exit(1); }));
 
     settingsMenu = new Menu;
     settingsMenu->add(new Entry("<", [] { menu = mainMenu; }));
     // TODO: Add this back and enable substituting the render quality during runtime
-    // settingsMenu->add(new Entry("Video",        []{ menu = videoMenu; }));
+    settingsMenu->add(new Entry("Video",        []{ menu = videoMenu; }));
     // settingsMenu->add(new Entry("Controller 1", []{ menu = joystickMenu[0]; }));
 
     // updateVideoMenu();
