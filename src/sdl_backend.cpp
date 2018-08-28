@@ -3,6 +3,7 @@
 #include "audio.h"
 #include "cpu.h"
 #include "input.h"
+#include "gui.h"
 
 #include "save_states.h"
 #include "sdl_backend.h"
@@ -42,10 +43,15 @@ static SDL_cond  *frame_available_cond;
 static bool ready_to_draw_new_frame;
 static bool frame_available;
 static bool pending_sdl_thread_exit;
+SDL_Joystick *joystick[] = {nullptr, nullptr};
 SDL_mutex   *event_lock;
 
 Uint16 const sdl_audio_buffer_size = 2048;
 static SDL_AudioDeviceID audio_device_id;
+
+// Framerate control:
+const int FPS = 60;
+const int DELAY = 200.0f / FPS;
 
 const unsigned WIDTH = 256;
 const unsigned HEIGHT = 240;
@@ -78,13 +84,24 @@ void put_pixel(unsigned x, unsigned y, uint32_t color) {
 }
 
 void draw_frame() {
+    uint32_t frameStart, frameTime;
+    
+    frameStart = SDL_GetTicks();
+    printf("frameStart: %d\n", frameStart);
+
     SDL_LockMutex(frame_lock);
+    printf("Drawing Frame\n");
     if (ready_to_draw_new_frame) {
         frame_available = true;
         swap(back_buffer, front_buffer);
         SDL_CondSignal(frame_available_cond);
     }
     SDL_UnlockMutex(frame_lock);
+    // Wait to mantain framerate:
+        frameTime = SDL_GetTicks() - frameStart;
+        printf("frameTime: %d\n", frameTime);
+        if (frameTime < DELAY)
+            SDL_Delay((int)(DELAY - frameTime));
 }
 
 static void audio_callback(void*, Uint8 *stream, int len) {
@@ -157,125 +174,91 @@ static void remove_controller(Controller_t::Type type, SDL_JoystickID instance_i
 }
 void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
 {
-    switch(button)
-    {
-        case JOY_A:
-            if (pressed)
-            {
-                set_button_state(njoy,0);
-            }
-            else
-            {
-                clear_button_state(njoy,0);
-            }
-            break;
-        case JOY_B:
-            if (pressed)
-            {
-                set_button_state(njoy,1);
-            }
-            else
-            {
-                clear_button_state(njoy,1);
-            }
-            break;
-        case  JOY_MINUS:
-            if (pressed)
-            {
-                set_button_state(njoy,2);
-            }
-            else
-            {
-                clear_button_state(njoy,2);
-            }
-            break;
-        case  JOY_PLUS:
-            if (pressed)
-            {
-                set_button_state(njoy,3);
-            }
-            else
-            {
-                clear_button_state(njoy,3);
-            }
-            break;
-        case  JOY_X:
-            if (pressed){
-                // EXIT NESalizer
-                exit_sdl_thread();
-                deinit_sdl();
-            }
-            break;
-        case  JOY_UP:
-            if (pressed)
-            {
-                set_button_state(njoy,4);
-            }
-            else
-            {
-                clear_button_state(njoy,4);
-            }
-            break;
-        case JOY_DOWN:
-            if (pressed)
-            {
-                set_button_state(njoy,5);
-            }
-            else
-            {
-                clear_button_state(njoy,5);
-            }
-            break;
-        case  JOY_LEFT:
-            if (pressed)
-            {
-                set_button_state(njoy,6);
-            }
-            else
-            {
-                clear_button_state(njoy,6);
-            }
-            break;
-        case  JOY_RIGHT:
-            if (pressed)
-            {
-                set_button_state(njoy,7);
-            }
-            else
-            {
-                clear_button_state(njoy,7);
-            }
-            break;
-        case  JOY_ZL:
-            if (pressed){
-                // Load Save-state
-                load_state();
-            }
-            break;
-        case JOY_ZR:
-            if (pressed){
-                // Save State
-                save_state();
-            }
-            break;
-        case  SDL_CONTROLLER_BUTTON_LEFTSTICK:
-            if (pressed)
-            {
-                // Reset the emulator
-                soft_reset();
-            }
-            else
-            {
-            ////////////////////////
-            }
-            break;     
+    const int DEAD_ZONE = 8000;
+
+    uint8_t j = 0;
+    // A
+    if(SDL_JoystickGetButton(joystick[0], JOY_A)) {
+        set_button_state(0, JOY_A);
     }
+    else {
+        clear_button_state(0, JOY_A);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_B)) {
+        set_button_state(0, JOY_B);
+    }
+    else {
+        clear_button_state(0, JOY_B);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_PLUS)) {
+        set_button_state(0, JOY_PLUS);
+    }
+    else {
+        clear_button_state(0, JOY_PLUS);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_MINUS)) {
+        set_button_state(0, JOY_MINUS);
+    }
+    else {
+        clear_button_state(0, JOY_MINUS);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_UP)) {
+        set_button_state(0, JOY_UP);
+    }
+    else {
+        clear_button_state(0, JOY_UP);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_DOWN)) {
+        set_button_state(0, JOY_DOWN);
+    }
+    else {
+        clear_button_state(0, JOY_DOWN);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_LEFT)) {
+        set_button_state(0, JOY_LEFT);
+    }
+    else {
+        clear_button_state(0, JOY_LEFT);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_RIGHT)) {
+        set_button_state(0, JOY_RIGHT);
+    }
+    else {
+        clear_button_state(0, JOY_RIGHT);
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_ZL)) {
+        save_state();
+        SDL_LockMutex(event_lock);
+        SDL_LockMutex(frame_lock);
+        GUI::toggle_pause();
+        while(GUI::is_paused()) {
+
+        }
+        // svcSleepThread(1000000);
+        SDL_UnlockMutex(frame_lock);
+        SDL_UnlockMutex(event_lock);
+        load_state();
+    }
+    if(SDL_JoystickGetButton(joystick[0], JOY_ZR)) {
+        // load_state();
+    }
+}
+
+uint8_t get_menu_joypad(int n)
+{
+    uint8_t retVal = 0;
+    if (SDL_JoystickGetButton(joystick[n], JOY_A)) retVal = 1;
+    else if (SDL_JoystickGetButton(joystick[n], JOY_UP)) retVal = 2;
+    else if (SDL_JoystickGetButton(joystick[n], JOY_DOWN)) retVal = 3;
+    if(retVal > 0)
+        printf("Returning: %d\n", retVal);
+    return retVal;
 }
 
 static void process_events() {
     SDL_Event event;
     SDL_LockMutex(event_lock);
-    while (SDL_PollEvent(&event))
+    while (SDL_PollEvent(&event)) {
         switch(event.type)
         {
             case SDL_QUIT:
@@ -283,29 +266,32 @@ static void process_events() {
                 pending_sdl_thread_exit = true;
                 break;
             case SDL_CONTROLLERDEVICEADDED:
-		add_controller(Controller_t::k_Gamepad, event.cdevice.which);
-		break;
+		        // add_controller(Controller_t::k_Gamepad, event.cdevice.which);
+		        break;
             case SDL_CONTROLLERDEVICEREMOVED:
-		remove_controller(Controller_t::k_Gamepad, event.cdevice.which);
-		break;
-            case SDL_CONTROLLERBUTTONDOWN:
-		{
-		int controller_index;
-		if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
-                    break;
-                }
-		joyprocess(event.cbutton.button, SDL_TRUE, controller_index);
-		}
-		break;
+		        // remove_controller(Controller_t::k_Gamepad, event.cdevice.which);
+		        break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONDOWN: 
+                {
+                    printf("In CONTROLLERBUTTONDOWN");
+		            /*int controller_index;
+		            if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
+                        break;
+                    }*/
+		            joyprocess(event.cbutton.button, SDL_TRUE, 0);
+		        }
+		        break;
+            case SDL_JOYBUTTONUP:
             case SDL_CONTROLLERBUTTONUP:
-		{
-		int controller_index;
-		if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
-                    break;
-		}
-		joyprocess(event.cbutton.button, SDL_FALSE, controller_index);
-		}
-		break;
+		        {
+		            /*int controller_index;
+                    if (!get_controller_index(Controller_t::k_Gamepad, event.cbutton.which, &controller_index)) {
+                                break;
+                    }*/
+                    joyprocess(event.cbutton.button, SDL_FALSE, 0);
+		        }
+		        break;
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym)
                 {
@@ -357,6 +343,7 @@ static void process_events() {
                 }
                 break;
         }
+    }
     SDL_UnlockMutex(event_lock);
 }
 
@@ -392,7 +379,7 @@ void exit_sdl_thread() {
 
 // Initialization and de-initialization
 void init_sdl() {
-    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0,
+    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0,
       "failed to initialize SDL: %s", SDL_GetError());
 
     fail_if(!(screen =
@@ -403,9 +390,19 @@ void init_sdl() {
         SDL_WINDOW_FULLSCREEN)),
       "failed to create window: %s", SDL_GetError());
 
+    printf("Attempting to open joysticks...");
+    for (int i = 0; i < 2; i++) {
+        joystick[i] = SDL_JoystickOpen(i);
+        if (joystick[i] == nullptr)
+        {
+            printf("Joystick %d Failure!\n", i);
+            return;
+        }
+    }
+
     
     printf("SDL_CreateRenderer\n");
-    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_TARGETTEXTURE )),
+    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_SOFTWARE )),
       "failed to create rendering context: %s", SDL_GetError());
 
     // Display some information about the renderer
@@ -432,7 +429,7 @@ void init_sdl() {
     }
 
     printf("SDL_SetHint\n");
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     printf("SDL_CreateTexture\n");
     fail_if(!(screen_tex =
       SDL_CreateTexture(
@@ -481,6 +478,14 @@ void init_sdl() {
     fail_if(!(frame_lock = SDL_CreateMutex()), "failed to create frame mutex: %s", SDL_GetError());
     printf("SDL_CreateCond()\n");
     fail_if(!(frame_available_cond = SDL_CreateCond()),"failed to create frame condition variable: %s", SDL_GetError());
+
+    // Block until a ROM is selected
+    GUI::init(screen, renderer);
+    while(GUI::is_paused()) {
+        GUI::render();
+        process_events();
+        GUI::update_menu(read_button_states(0));
+    };
 }
 
 void deinit_sdl() {

@@ -61,7 +61,7 @@ ICON		:= icon.jpg
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
 
-CFLAGS	:=	-g -Wall -O3 -ffunction-sections -fdata-sections \
+CFLAGS	:=	-g -Wall -O3 -ffunction-sections -fdata-sections -fpermissive \
 			-ftls-model=local-exec -ffast-math \
 			`sdl2-config --cflags` `freetype-config --cflags` \
 			$(ARCH) $(DEFINES) $(INCLUDE) -D__SWITCH__

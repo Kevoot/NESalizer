@@ -20,6 +20,7 @@ uint8_t read_button_states(unsigned n) {
 }
 
 uint8_t set_button_state(unsigned n, unsigned i) {
+    printf("Setting button state\n");
     switch(i)
     {
         case  0:
@@ -30,31 +31,36 @@ uint8_t set_button_state(unsigned n, unsigned i) {
             // B
             controller_data[n].b_pushed=true;
             break;
-        case  2:
+        case  11:
             // Select
             controller_data[n].select_pushed=true;
             break;
-        case  3:
+        case  10:
             // Start
-           controller_data[n].start_pushed=true;
+            controller_data[n].start_pushed=true;
             break;
-        case  4:
+        case  13:
             // Up
             controller_data[n].up_pushed=true;
             break;
-        case  5:
+        case  15:
             // Down
             controller_data[n].down_pushed=true;
             break;
-        case  6:
+        case  12:
             // Left
             controller_data[n].left_pushed=true;
             break;
-        case 7:
+        case 14:
             // Right
             controller_data[n].right_pushed=true;
             break;
     }
+
+    return (controller_data[n].right_pushed << 7) | (controller_data[n].left_pushed << 6) | 
+            (controller_data[n].down_pushed << 5) | (controller_data[n].up_pushed << 4) | 
+            (controller_data[n].start_pushed << 3) | (controller_data[n].select_pushed << 2) |
+           (controller_data[n].b_pushed << 1) |  (controller_data[n].a_pushed);
 }
 
 uint8_t clear_button_state(unsigned n, unsigned i) {
@@ -68,31 +74,35 @@ uint8_t clear_button_state(unsigned n, unsigned i) {
             // B
             controller_data[n].b_pushed=false;
             break;
-        case  2:
+        case  11:
             // Select
             controller_data[n].select_pushed=false;
             break;
-        case  3:
+        case  10:
             // Start
             controller_data[n].start_pushed=false;
             break;
-        case  4:
+        case  13:
             // Up
             controller_data[n].up_pushed=false;
             break;
-        case  5:
+        case  15:
             // Down
             controller_data[n].down_pushed=false;
             break;
-        case  6:
+        case  12:
             // Left
            controller_data[n].left_pushed=false;
             break;
-        case 7:
+        case 14:
             // Right
            controller_data[n].right_pushed=false;
             break;
     }
+        return (controller_data[n].right_pushed << 7) | (controller_data[n].left_pushed << 6) | 
+            (controller_data[n].down_pushed << 5) | (controller_data[n].up_pushed << 4) | 
+            (controller_data[n].start_pushed << 3) | (controller_data[n].select_pushed << 2) |
+           (controller_data[n].b_pushed << 1) |  (controller_data[n].a_pushed);
 }
 
 template<bool calculating_size, bool is_save>

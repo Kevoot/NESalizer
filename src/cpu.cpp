@@ -42,9 +42,6 @@ void soft_reset()      { pending_event = pending_reset = true; }
 static bool pending_irq;
 static bool pending_nmi;
 
-// The system is soft-reset when this goes from 1 to 0. Used by test ROMs.
-static unsigned ticks_till_reset;
-
 //
 // RAM, registers, status flags, and misc. state
 //
@@ -116,9 +113,6 @@ void tick() {
 
     tick_apu();
 
-    if (ticks_till_reset > 0 && --ticks_till_reset == 0)
-        pending_reset = true;
-
     ++frame_offset;
 }
 
@@ -148,8 +142,8 @@ uint8_t read_mem(uint16_t addr) {
     case 0x0000 ... 0x1FFF: res = ram[addr & 0x7FF];      break;
     case 0x2000 ... 0x3FFF: res = read_ppu_reg(addr & 7); break;
     case 0x4015           : res = read_apu_status();      break;
-    case 0x4016           : res = read_controller(0);     break;
-    case 0x4017           : res = read_controller(1);     break;
+    case 0x4016           : res = read_controller(0); break;
+    case 0x4017           : res = read_controller(1); break;
     case 0x4018 ... 0x5FFF: res = mapper_fns.read(addr);  break; // General enough?
     case 0x6000 ... 0x7FFF:
         // WRAM/SRAM. Returns open bus if none present.
@@ -205,18 +199,6 @@ static void write_mem(uint8_t val, uint16_t addr) {
     case 0x4017: write_frame_counter(val);         break;
 
     case 0x6000 ... 0x7FFF:
-        // SRAM/WRAM/PRG RAM
-        // blargg's test ROMs write the test status to $6000 and a
-        // corresponding text string to $6004
-        if (addr == 0x6000) {
-            if (val < 0x80)
-                // report_status_and_end_test(val, (char*)wram_6000_page + 4);
-                printf("report_status_and_end_test");
-            else if (val == 0x81)
-                // Wait 150 ms before resetting
-                ticks_till_reset = 0.15*cpu_clock_rate;
-        }
-
         if (wram_6000_page) wram_6000_page[addr & 0x1FFF] = val;
         break;
 
@@ -790,7 +772,6 @@ static void process_pending_events() {
 
     if (pending_frame_completion) {
         pending_frame_completion = false;
-        sleep_till_end_of_frame();
         draw_frame();
         end_audio_frame();
         begin_audio_frame();
@@ -808,6 +789,7 @@ static void process_pending_events() {
 }
 
 void run() {
+
     set_apu_cold_boot_state();
     set_cpu_cold_boot_state();
     set_ppu_cold_boot_state();
@@ -817,7 +799,6 @@ void run() {
     do_interrupt(Int_reset);
 
     for (;;) {
-
         if (pending_event) {
             pending_event = false;
             process_pending_events();

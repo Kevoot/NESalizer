@@ -34,14 +34,14 @@ int main(int argc, char *argv[]) {
     init_mappers();
     
     // Not figured out how to pass arguments on the steamlink yet.
-    program_name = argv[0] ? argv[0] : "nesalizer";
+    /*program_name = argv[0] ? argv[0] : "nesalizer";
     if (argc != 2) {
         load_rom("loz.nes", true);   
     }
     else 
     {
          load_rom(argv[1], true);      
-    }
+    }*/
 
     init_sdl();
     SDL_ShowCursor(SDL_DISABLE);

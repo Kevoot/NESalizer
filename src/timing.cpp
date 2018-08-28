@@ -10,9 +10,6 @@
 double cpu_clock_rate;
 double ppu_clock_rate;
 double ppu_fps;
-uint32_t frameStart = 0, frameTime = 0;
-int FPS;
-int DELAY;
 
 void init_timing_for_rom() {
     if (is_pal) {
@@ -27,8 +24,6 @@ void init_timing_for_rom() {
         ppu_clock_rate           = master_clock_rate/4.0; // ~5.37 MHz
         ppu_fps                  = ppu_clock_rate/(341*261 + 340.5); // ~60.1 FPS
     }
-    FPS = ppu_fps;
-    DELAY = 20.0f / FPS;
 }
 
 // TODO: Use SDL_Delay() instead? Higher sleep precision is good for audio

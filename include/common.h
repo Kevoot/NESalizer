@@ -1,5 +1,5 @@
 // General utility stuff and error handling
-
+#pragma once
 #include <cassert>
 #include <cerrno>
 #include <climits>
@@ -25,7 +25,34 @@
 // using std::size_t;
 // ...
 
+#define JOY_A     0
+#define JOY_B     1
+#define JOY_X     2
+#define JOY_Y     3
+#define JOY_L     6
+#define JOY_R     7
+#define JOY_ZL    8
+#define JOY_ZR    9
+#define JOY_PLUS  10
+#define JOY_MINUS 11
+#define JOY_LEFT  12
+#define JOY_UP    13
+#define JOY_RIGHT 14
+#define JOY_DOWN  15
+#define JOY_LSTICK_LEFT 16
+#define JOY_LSTICK_UP 17
+#define JOY_LSTICK_RIGHT 18
+#define JOY_LSTICK_DOWN 19
+
 extern char const *program_name; // argv[0]
+
+#define NTH_BIT(x, n) (((x) >> (n)) & 1)
+
+/* Integer type shortcuts */
+typedef uint8_t  u8;  typedef int8_t  s8;
+typedef uint16_t u16; typedef int16_t s16;
+typedef uint32_t u32; typedef int32_t s32;
+typedef uint64_t u64; typedef int64_t s64;
 
 //
 // General utility functions and macros

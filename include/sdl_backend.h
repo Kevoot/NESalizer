@@ -19,7 +19,7 @@ void put_pixel(unsigned x, unsigned y, uint32_t color);
 void draw_frame();
 
 // Audio
-int const sample_rate = 44100;
+int const sample_rate = 96000;
 //int const sample_rate = 22050;
 
 // Protect the audio buffer from concurrent access by the emulation thread and
