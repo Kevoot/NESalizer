@@ -66,14 +66,15 @@ CFLAGS	:=	-g -Wall -O3 -ffunction-sections -fdata-sections -fpermissive \
 			`sdl2-config --cflags` `freetype-config --cflags` \
 			$(ARCH) $(DEFINES) $(INCLUDE) -D__SWITCH__
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fexceptions -std=gnu++11
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fexceptions -std=gnu++14
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS := -lSDL2_mixer -lmpg123 -lSDL2_ttf -lSDL2_gfx -lSDL2_image -lpng -ljpeg \
 		`sdl2-config --libs` `freetype-config --libs` \
-		-specs=$(DEVKITPRO)/libnx/switch.specs -lnx
+		-specs=$(DEVKITPRO)/libnx/switch.specs -lnx -lm \
+		-lEGL -lGLESv2 -lglapi -ldrm_nouveau
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib

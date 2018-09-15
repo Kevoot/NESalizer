@@ -22,7 +22,7 @@ void init(SDL_Window * scr, SDL_Renderer * rend);
 void toggle_pause();
 SDL_Scancode query_key();
 int query_button();
-void run();
+void main_run();
 
 SDL_Texture* gen_text(std::string text, SDL_Color color);
 void render_texture(SDL_Texture* texture, int x, int y);
@@ -32,9 +32,11 @@ void update_menu(u8 select);
 
 void reload_rom();
 void unload_rom();
+void stop_main_run();
 
 u8 get_joypad_state(int n);
 void new_frame(u32* pixels);
 void set_size(int mul);
+static int emulation_thread(void*);
 
 }

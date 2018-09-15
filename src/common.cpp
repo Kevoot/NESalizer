@@ -39,20 +39,50 @@ uint8_t *get_file_buffer(char const *filename, size_t &size_out) {
 
     // We do not support large files on 32-bit systems
 
-    errno_fail_if(!(file = fopen(filename, "rb")), "failed to open '%s'", filename);
-    errno_fail_if(fseek(file, 0, SEEK_END) == -1, "failed to seek to end of '%s'", filename);
-    errno_fail_if((file_size = ftell(file)) == -1, "failed to get size of '%s'", filename);
-    errno_fail_if(fseek(file, 0, SEEK_SET) == -1, "failed to seek back to beginning of '%s'", filename);
+    if(!(file = fopen(filename, "rb"))) {
+        printf("failed to open '%s'", filename);
+        exit(1);
+    }
 
-    fail_if(!(file_buf = new (std::nothrow) unsigned char[file_size]),
-            "failed to allocate %ld-byte buffer for '%s'", file_size, filename);
+    if(fseek(file, 0, SEEK_END) == -1) {
+        printf("failed to seek to end of '%s'", filename);
+        exit(1);
+    }
+
+    if((file_size = ftell(file)) == -1) {
+        printf("failed to get size of '%s'", filename);
+        exit(1);
+    }
+
+    if(fseek(file, 0, SEEK_SET) == -1) {
+        printf("failed to seek back to beginning of '%s'", filename);
+        exit(1);
+    }
+
+    if(!(file_buf = new (std::nothrow) unsigned char[file_size])) {
+        printf("failed to allocate %ld-byte buffer for '%s'", file_size, filename);
+        exit(1);
+    }
+
     size_t const fread_res = fread(file_buf, 1, file_size, file);
     if ((unsigned long long)fread_res < (unsigned long long)file_size) {
-        fail_if(feof(file), "unexpected end of file while reading '%s'", filename);
-        fail_if(ferror(file), "I/O error while reading '%s'", filename);
-        fail("unknown error while reading '%s'", filename);
+        if(feof(file)) {
+            printf("unexpected end of file while reading '%s'", filename);
+            exit(1);
+        }
+        if(ferror(file)) {
+            printf("I/O error while reading '%s'", filename);
+            exit(1);
+        }
+        else {
+            printf("unknown error while reading '%s'", filename);
+            exit(1);
+        }
     }
-    errno_fail_if(fclose(file) == EOF, "failed to close '%s'", filename);
+    if(fclose(file) == EOF) {
+        printf("failed to close '%s'", filename);
+        exit(1);
+    }
 
     size_out = file_size;
     return file_buf;

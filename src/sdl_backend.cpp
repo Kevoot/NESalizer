@@ -38,7 +38,7 @@ static SDL_Renderer *renderer;
 static SDL_Texture  *screen_tex;
 static Uint32 *front_buffer;
 static Uint32 *back_buffer;
-static SDL_mutex *frame_lock;
+SDL_mutex *frame_lock;
 static SDL_cond  *frame_available_cond;
 static bool ready_to_draw_new_frame;
 static bool frame_available;
@@ -51,7 +51,7 @@ static SDL_AudioDeviceID audio_device_id;
 
 // Framerate control:
 const int FPS = 60;
-const int DELAY = 200.0f / FPS;
+const int DELAY = 100.0f / FPS;
 
 const unsigned WIDTH = 256;
 const unsigned HEIGHT = 240;
@@ -89,10 +89,8 @@ void draw_frame() {
     uint32_t frameStart, frameTime;
     
     frameStart = SDL_GetTicks();
-    printf("frameStart: %d\n", frameStart);
 
     SDL_LockMutex(frame_lock);
-    printf("Drawing Frame\n");
     if (ready_to_draw_new_frame) {
         frame_available = true;
         swap(back_buffer, front_buffer);
@@ -101,9 +99,9 @@ void draw_frame() {
     SDL_UnlockMutex(frame_lock);
     // Wait to mantain framerate:
         frameTime = SDL_GetTicks() - frameStart;
-        printf("frameTime: %d\n", frameTime);
-        if (frameTime < DELAY)
+        if (frameTime < DELAY) {
             SDL_Delay((int)(DELAY - frameTime));
+        }
 }
 
 static void audio_callback(void*, Uint8 *stream, int len) {
@@ -228,19 +226,11 @@ void joyprocess(Uint8 button, SDL_bool pressed, Uint8 njoy)
     else {
         clear_button_state(0, JOY_RIGHT);
     }
-    if(SDL_JoystickGetButton(joystick[0], JOY_ZL)) {
+    if(SDL_JoystickGetButton(joystick[0], JOY_R)) {
+        SDL_Delay(100);
         GUI::toggle_pause();
-        while(GUI::is_paused()) {
-            printf("IN LOOP\n");
-            GUI::render();
-            process_events();
-            SDL_Delay(50);
-            GUI::update_menu(read_button_states(0));
-        }
+        showGUI();
     }
-    /*if(SDL_JoystickGetButton(joystick[0], JOY_ZR)) {
-        // load_state();
-    }*/
 }
 
 uint8_t get_menu_joypad(int n)
@@ -249,8 +239,6 @@ uint8_t get_menu_joypad(int n)
     if (SDL_JoystickGetButton(joystick[n], JOY_A)) retVal = 1;
     else if (SDL_JoystickGetButton(joystick[n], JOY_UP)) retVal = 2;
     else if (SDL_JoystickGetButton(joystick[n], JOY_DOWN)) retVal = 3;
-    if(retVal > 0)
-        printf("Returning: %d\n", retVal);
     return retVal;
 }
 
@@ -347,26 +335,34 @@ static void process_events() {
 }
 
 void sdl_thread() {
-    for (;;) {
+    printf("Entering sdl_thread\n");
+    SDL_UnlockMutex(frame_lock);
+    for(;;) {
         // Wait for the emulation thread to signal that a frame has completed
-        SDL_LockMutex(frame_lock);
+        // SDL_LockMutex(frame_lock);
         ready_to_draw_new_frame = true;
         while (!frame_available && !pending_sdl_thread_exit)
             SDL_CondWait(frame_available_cond, frame_lock);
         if (pending_sdl_thread_exit) {
             SDL_UnlockMutex(frame_lock);
+            pending_sdl_thread_exit = false;
             return;
         }
         frame_available = ready_to_draw_new_frame = false;
-        SDL_UnlockMutex(frame_lock);
+        // SDL_UnlockMutex(frame_lock);
         process_events();
         // Draw the new frame
-        fail_if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32)),
-          "failed to update screen texture: %s", SDL_GetError());
-        fail_if(SDL_RenderCopy(renderer, screen_tex, 0, 0),
-          "failed to copy rendered frame to render target: %s", SDL_GetError());
+        if(SDL_UpdateTexture(screen_tex, 0, front_buffer, 256*sizeof(Uint32))) {
+            printf("failed to update screen texture: %s", SDL_GetError());
+            exit(1);
+        }
+        if(SDL_RenderCopy(renderer, screen_tex, 0, 0)) {
+            printf("failed to copy rendered frame to render target: %s", SDL_GetError());
+            exit(1);
+        }
         SDL_RenderPresent(renderer);
     }
+    printf("Exiting sdl_thread\n");
 }
 
 void exit_sdl_thread() {
@@ -378,16 +374,20 @@ void exit_sdl_thread() {
 
 // Initialization and de-initialization
 void init_sdl() {
-    fail_if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0,
-      "failed to initialize SDL: %s", SDL_GetError());
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
+        printf("failed to initialize SDL: %s", SDL_GetError());
+        exit(1);
+    }
 
-    fail_if(!(screen =
+    if(!(screen =
       SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         256, 240,
-        SDL_WINDOW_FULLSCREEN)),
-      "failed to create window: %s", SDL_GetError());
+        SDL_WINDOW_FULLSCREEN))) {
+        printf("failed to create window: %s", SDL_GetError());
+        exit(1);
+    }
 
     printf("Attempting to open joysticks...");
     for (int i = 0; i < 2; i++) {
@@ -399,10 +399,10 @@ void init_sdl() {
         }
     }
 
-    
-    printf("SDL_CreateRenderer\n");
-    fail_if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_SOFTWARE )),
-      "failed to create rendering context: %s", SDL_GetError());
+    if(!(renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_TARGETTEXTURE ))) {
+        printf("failed to create rendering context: %s", SDL_GetError());
+        exit(1);
+    }
 
     // Display some information about the renderer
     SDL_RendererInfo renderer_info;
@@ -430,14 +430,16 @@ void init_sdl() {
     printf("SDL_SetHint\n");
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     printf("SDL_CreateTexture\n");
-    fail_if(!(screen_tex =
+    if(!(screen_tex =
       SDL_CreateTexture(
         renderer,
         // SDL takes endianess into account, so this becomes GL_RGBA8 internally on little-endian systems
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        256, 240)),
-      "failed to create texture for screen: %s", SDL_GetError());
+        256, 240))) {
+        printf("failed to create texture for screen: %s", SDL_GetError());
+        exit(1);
+    }
 
     static Uint32 render_buffers[2][240*256];
     back_buffer  = render_buffers[0];
@@ -473,17 +475,30 @@ void init_sdl() {
 
     // SDL thread synchronization
     printf("SDL_CreateMutex\n");
-    fail_if(!(event_lock = SDL_CreateMutex()), "failed to create event mutex: %s", SDL_GetError());
-    fail_if(!(frame_lock = SDL_CreateMutex()), "failed to create frame mutex: %s", SDL_GetError());
+    if(!(event_lock = SDL_CreateMutex())) {
+        printf("failed to create event mutex: %s", SDL_GetError());
+        exit(1);
+    }
+    if(!(frame_lock = SDL_CreateMutex())) {
+        printf("failed to create frame mutex: %s", SDL_GetError());
+        exit(1);
+    }
     printf("SDL_CreateCond()\n");
-    fail_if(!(frame_available_cond = SDL_CreateCond()),"failed to create frame condition variable: %s", SDL_GetError());
-
+    if(!(frame_available_cond = SDL_CreateCond())) {
+        printf("failed to create frame condition variable: %s", SDL_GetError());
+        exit(1);
+    }
     // Block until a ROM is selected
     GUI::init(screen, renderer);
-    while(GUI::is_paused()) {
+}
+
+void showGUI() {
+    while (GUI::is_paused())
+    {
+        printf("In showGUI()\n");
         GUI::render();
         process_events();
-        SDL_Delay(50);
+        SDL_Delay(100);
         GUI::update_menu(read_button_states(0));
     };
 }

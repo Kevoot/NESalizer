@@ -6,6 +6,8 @@
 // loading right (tested by the sprdma_and_dmc_dma tests).
 extern bool cpu_is_reading;
 
+extern bool running_state;
+
 // Last value put on the CPU data bus. Used to implement open bus reads.
 extern uint8_t cpu_data_bus;
 
@@ -41,6 +43,8 @@ void frame_completed();
 void soft_reset();
 // Signaled if emulation should end
 void end_emulation();
+
+bool get_rom_status();
 
 template<bool calculating_size, bool is_save>
 void transfer_cpu_state(uint8_t *&buf);

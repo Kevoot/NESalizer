@@ -35,3 +35,7 @@ void reload_rom();
 
 // Frees resources associated with the ROM
 void unload_rom();
+
+bool is_rom_loaded();
+
+void set_rom_loaded(bool loaded);

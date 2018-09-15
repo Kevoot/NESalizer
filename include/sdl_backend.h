@@ -22,10 +22,13 @@ void draw_frame();
 int const sample_rate = 96000;
 //int const sample_rate = 22050;
 
+extern SDL_mutex *frame_lock;
+
 // Protect the audio buffer from concurrent access by the emulation thread and
 // SDL
 void lock_audio();
 void unlock_audio();
+void showGUI();
 
 // Stop and start audio playback in SDL
 void start_audio_playback();

@@ -20,7 +20,6 @@ uint8_t read_button_states(unsigned n) {
 }
 
 uint8_t set_button_state(unsigned n, unsigned i) {
-    printf("Setting button state\n");
     switch(i)
     {
         case  0:

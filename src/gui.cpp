@@ -2,13 +2,16 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <switch.h>
+#include "sdl_backend.h"
 #include "menu.h"
 #include "save_states.h"
+#include "cpu.h"
 
-namespace GUI {
+namespace GUI
+{
 
 // Screen size:
-const unsigned WIDTH  = 256;
+const unsigned WIDTH = 256;
 const unsigned HEIGHT = 240;
 
 int BTN_UP[] = {-1, -1};
@@ -20,26 +23,27 @@ int BTN_B[] = {-1, -1};
 int BTN_SELECT[] = {-1, -1};
 int BTN_START[] = {-1, -1};
 
-static SDL_Window   *window;
+static SDL_Window *window;
 static SDL_Renderer *renderer;
-static SDL_Texture  *screen_tex;
+static SDL_Texture *screen_tex;
 
 // Menus:
-Menu* menu;
-Menu* mainMenu;
-Menu* settingsMenu;
-Menu* videoMenu;
-Menu* keyboardMenu[2];
-Menu* joystickMenu[2];
-FileMenu* fileMenu;
+Menu *menu;
+Menu *mainMenu;
+Menu *settingsMenu;
+Menu *videoMenu;
+Menu *keyboardMenu[2];
+Menu *joystickMenu[2];
+FileMenu *fileMenu;
 
-SDL_Texture* gameTexture;
-SDL_Texture* background;
-TTF_Font* font;
-u8 const* keys;
+SDL_Texture *gameTexture;
+SDL_Texture *background;
+TTF_Font *font;
+u8 const *keys;
 
 bool pause = true;
 int last_window_size = 0;
+bool exitFlag = false;
 
 /* Set the window size multiplier */
 void set_size(int mul)
@@ -72,30 +76,37 @@ void updateVideoMenu()
     videoMenu->add(new Entry("Size 1x", [] { set_size(1); }));
     videoMenu->add(new Entry("Size 2x", [] { set_size(2); }));
     videoMenu->add(new Entry("Size 3x", [] { set_size(3); }));
-    /* videoMenu->add(new Entry((quality), []{ set_render_quality((currentRenderQuality + 1) % 3);
+    /* =videoMenu->add(new Entry((quality), []{ set_render_quality((currentRenderQuality + 1) % 3);
                                              updateVideoMenu();
                                              menu = videoMenu;
                                              }));*/
 }
 
-bool is_paused() {
-    if(pause) return true;
-    else return false;
+bool is_paused()
+{
+    if (pause)
+        return true;
+    else
+        return false;
 }
 
-void reload_rom() {
+void reload_rom()
+{
     reload_rom();
 }
 
-void unload_rom() {
+void unload_rom()
+{
     unload_rom();
 }
 
-void init(SDL_Window * scr, SDL_Renderer * rend) {
+void init(SDL_Window *scr, SDL_Renderer *rend)
+{
     renderer = rend;
     window = scr;
 
-    for(int p = 0; p < 2; p++) {
+    for (int p = 0; p < 2; p++)
+    {
         BTN_UP[p] = 17;
         BTN_DOWN[p] = 19;
         BTN_LEFT[p] = 16;
@@ -106,33 +117,26 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
         BTN_START[p] = 10;
     }
 
-    printf("Initializing TTF\n");
     if (TTF_Init() < 0)
     {
-        printf("Failed to init TTF\n");
         return;
     }
 
-    printf("Creating gameTexture\n");
     gameTexture = SDL_CreateTexture(renderer,
                                     SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                     WIDTH, HEIGHT);
 
-    printf("Opening font\n");
     font = TTF_OpenFont("res/font.ttf", FONT_SZ);
-    if(!font) {
-        printf("Failed to open res/font.ttf!");
+    if (!font)
+    {
         exit(1);
     }
 
-    printf("Initializing PNGs\n");
     if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
     {
-        printf("Failed to initialize PNG!");
         exit(1);
     }
 
-    printf("Loading background image...");
     SDL_Surface *backSurface = IMG_Load("res/init.png");
 
     background = SDL_CreateTextureFromSurface(renderer, backSurface);
@@ -140,19 +144,16 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
     SDL_SetTextureColorMod(background, 60, 60, 60);
     SDL_FreeSurface(backSurface);
 
-    if(!background) {
-        printf("Failed to create background!");
+    if (!background)
+    {
         exit(1);
     }
-    printf("Done\n");
-
 
     // Menus:
     mainMenu = new Menu;
     mainMenu->add(new Entry("Load ROM", [] {
-        printf("Load ROM selected");
-        svcSleepThread(10000);
-        menu = fileMenu; 
+        SDL_Delay(100);
+        menu = fileMenu;
     }));
     mainMenu->add(new Entry("Save State", [] {
         save_state();
@@ -166,7 +167,7 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
     settingsMenu = new Menu;
     settingsMenu->add(new Entry("<", [] { menu = mainMenu; }));
     // TODO: Add this back and enable substituting the render quality during runtime
-    settingsMenu->add(new Entry("Video",        []{ menu = videoMenu; }));
+    settingsMenu->add(new Entry("Video", [] { menu = videoMenu; }));
     // settingsMenu->add(new Entry("Controller 1", []{ menu = joystickMenu[0]; }));
 
     // updateVideoMenu();
@@ -174,7 +175,8 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
     // settingsMenu->add(new Entry("Controller 2", []{ menu = joystickMenu[1]; }));
     // settingsMenu->add(new Entry("Save Settings", [] { /*save_settings();*/ menu = mainMenu; }));
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; i++)
+    {
         joystickMenu[i] = new Menu;
         joystickMenu[i]->add(new Entry("<", [] { menu = settingsMenu; }));
         joystickMenu[i]->add(new ControlEntry("Up", &BTN_UP[i]));
@@ -190,7 +192,6 @@ void init(SDL_Window * scr, SDL_Renderer * rend) {
     fileMenu = new FileMenu;
 
     menu = mainMenu;
-    printf("Finished menu creation\n");
 }
 //* Render a texture on screen */
 void render_texture(SDL_Texture *texture, int x, int y)
@@ -230,26 +231,32 @@ void render()
     SDL_RenderPresent(renderer);
 }
 
-void update_menu(u8 select) {
+void update_menu(u8 select)
+{
     menu->update(select);
 }
 
 /* Play/stop the game */
 void toggle_pause()
 {
-    printf("Toggling pause\n");
     pause = !pause;
     menu = mainMenu;
 
+    // Set CPU emulation to paused
     if (pause)
     {
-        printf("Paused, setting gameTexture\n");
-        SDL_SetTextureColorMod(gameTexture, 60, 60, 60);
+        SDL_LockMutex(frame_lock);
+        running_state = false;
     }
     else
     {
-        printf("Not paused, setting gameTexture\n");
-        SDL_SetTextureColorMod(gameTexture, 255, 255, 255);
+        running_state = true;
+        SDL_UnlockMutex(frame_lock);
+    }
+
+    if (pause)
+    {
+        SDL_SetTextureColorMod(gameTexture, 60, 60, 60);
     }
 }
 
@@ -281,9 +288,75 @@ int query_button()
         SDL_PollEvent(&e);
         if (e.type == SDL_JOYBUTTONDOWN)
         {
-            printf("Button pressed: %d", e.jbutton.button);
             return e.jbutton.button;
         }
     }
 }
+
+static int emulation_thread(void *)
+{
+    run();
+    return 0;
 }
+
+static int menu_thread(void *)
+{
+    SDL_Event e;
+    for (;;)
+    {
+        if (pause)
+        {
+            // Handle events:
+            while (SDL_PollEvent(&e))
+            {
+                switch (e.type)
+                {
+                case SDL_QUIT:
+                    return;
+                case SDL_JOYBUTTONDOWN:
+                    if ((e.jbutton.button == JOY_R) and get_rom_status())
+                        toggle_pause();
+                    else if (pause)
+                    {
+                        menu->update(e.jbutton.button);
+                        render();
+                    }
+                }
+            }
+        }
+    }
+}
+
+void stop_main_run()
+{
+    exitFlag = true;
+}
+
+void main_run()
+{
+    SDL_Thread *emu_thread;
+    SDL_Thread *m_thread;
+
+    // Get initial frame lock until ROM is chosen.
+    // SDL_LockMutex(frame_lock);
+    exitFlag = false;
+    running_state = true;
+    if(!(emu_thread = SDL_CreateThread(emulation_thread, "emulation", 0))) {
+        exit(1);
+    }
+
+    while (true)
+    {
+        printf("In main_run loop\n");
+        sdl_thread();
+        // Wait and free up for next cycle
+        SDL_WaitThread(emu_thread, 0);
+
+        if (exitFlag)
+        {
+            exitFlag = false;
+            return;
+        }
+    }
+}
+} // namespace GUI

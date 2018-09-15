@@ -41,14 +41,18 @@ static void add_to_timespec(timespec &ts, long nano_secs) {
 }
 
 void init_timing() {
-    errno_fail_if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1,
-      "failed to fetch initial synchronization timestamp from clock_gettime()");
+    if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1) {
+        printf("failed to fetch initial synchronization timestamp from clock_gettime()");
+        exit(1);
+    }
 }
 
 void sleep_till_end_of_frame() {
     add_to_timespec(clock_previous, 1e9/ppu_fps);
 again:
     svcSleepThread(clock_previous.tv_nsec / 1000000);
-    errno_fail_if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1,
-      "failed to fetch synchronization timestamp from clock_gettime()");
+    if(clock_gettime(CLOCK_MONOTONIC, &clock_previous) == -1) {
+        printf("failed to fetch synchronization timestamp from clock_gettime()");
+        exit(1);
+    }
 }

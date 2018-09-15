@@ -55,8 +55,10 @@ void load_state() {
 
 void init_save_states_for_rom() {
     state_size = transfer_system_state<true, false>(0);
-    fail_if(!(state = new (std::nothrow) uint8_t[state_size]),
-      "failed to allocate %zu-byte buffer for save state", state_size);
+    if(!(state = new (std::nothrow) uint8_t[state_size])) {
+        printf("failed to allocate %zu-byte buffer for save state", state_size);
+        exit(1);
+    }
 }
 
 void deinit_save_states_for_rom() {

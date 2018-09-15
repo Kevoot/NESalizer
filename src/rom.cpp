@@ -35,6 +35,8 @@ Mapper_fns mapper_fns;
 
 static uint8_t *rom_buf;
 
+bool rom_loaded;
+
 char const *const mirroring_to_str[N_MIRRORING_MODES] =
   { "horizontal",
     "vertical",
@@ -51,7 +53,6 @@ void reload_rom() {
 void load_rom(char const *filename, bool print_info) {
     fname = filename;
     #define PRINT_INFO(...) do { if (print_info) printf(__VA_ARGS__); } while(0)
-    printf("Loading ROM\n");
 
     size_t rom_buf_size;
     rom_buf = get_file_buffer(filename, rom_buf_size);
@@ -63,27 +64,37 @@ void load_rom(char const *filename, bool print_info) {
     is_pal = strstr(filename, "(E)") || strstr(filename, "PAL");
     PRINT_INFO("guessing %s based on filename\n", is_pal ? "PAL" : "NTSC");
 
-    fail_if(rom_buf_size < 16,
-            "'%s' is too short to be a valid iNES file (is %zu bytes - not even enough to hold the 16-byte "
-            "header)", filename, rom_buf_size);
+    if(rom_buf_size < 16) {
+        printf("'%s' is too short to be a valid iNES file (is %zu bytes - not even enough to hold the 16-byte "
+        "header)", filename, rom_buf_size);
+        exit(1);
+    }
 
-    fail_if(!MEM_EQ(rom_buf, "NES\x1A"),
-            "'%s' does not start with the expected byte sequence 'N', 'E', 'S', 0x1A", filename);
+    if(!MEM_EQ(rom_buf, "NES\x1A")) {
+        printf("'%s' does not start with the expected byte sequence 'N', 'E', 'S', 0x1A", filename);
+        exit(1);
+    }
 
     prg_16k_banks = rom_buf[4];
     chr_8k_banks  = rom_buf[5];
     PRINT_INFO("PRG ROM size: %u KB\nCHR ROM size: %u KB\n", 16*prg_16k_banks, 8*chr_8k_banks);
 
-    fail_if(prg_16k_banks == 0, // TODO: This makes sense for NES 2.0
-            "the iNES header specifies zero banks of PRG ROM (program storage), which makes no sense");
-    fail_if(!is_pow_2_or_0(prg_16k_banks) || !is_pow_2_or_0(chr_8k_banks),
-            "non-power-of-two PRG and CHR sizes are not supported yet");
+    if(prg_16k_banks == 0) { // TODO: This makes sense for NES 2.0
+        printf("the iNES header specifies zero banks of PRG ROM (program storage), which makes no sense");
+        exit(1);
+    }
+    if(!is_pow_2_or_0(prg_16k_banks) || !is_pow_2_or_0(chr_8k_banks)) {
+        printf("non-power-of-two PRG and CHR sizes are not supported yet");
+        exit(1);
+    }
 
     size_t const min_size = 16 + 512*has_trainer + 0x4000*prg_16k_banks + 0x2000*chr_8k_banks;
-    fail_if(rom_buf_size < min_size,
-            "'%s' is too short to hold the specified amount of PRG (program data) and CHR (graphics data) "
+    if(rom_buf_size < min_size) {
+        printf("'%s' is too short to hold the specified amount of PRG (program data) and CHR (graphics data) "
             "ROM - is %zu bytes, expected at least %zu bytes (16 (header) + %s%u*16384 (PRG) + %u*8192 (CHR))",
             filename, rom_buf_size, min_size, has_trainer ? "512 (trainer) + " : "", prg_16k_banks, chr_8k_banks);
+        exit(1);
+    }
 
     unsigned mapper;
 
@@ -131,8 +142,10 @@ void load_rom(char const *filename, bool print_info) {
 
     PRINT_INFO("mirroring: %s\n", mirroring_to_str[mirroring]);
 
-    fail_if(!(ciram = alloc_array_init<uint8_t>(mirroring == FOUR_SCREEN ? 0x1000 : 0x800, 0xFF)),
-            "failed to allocate %u bytes of nametable memory", mirroring == FOUR_SCREEN ? 0x1000 : 0x800);
+    if(!(ciram = alloc_array_init<uint8_t>(mirroring == FOUR_SCREEN ? 0x1000 : 0x800, 0xFF))) {
+        printf("failed to allocate %u bytes of nametable memory", mirroring == FOUR_SCREEN ? 0x1000 : 0x800);
+        exit(1);
+    }
 
     if (mirroring == FOUR_SCREEN || mapper == 7)
         // Assume no WRAM when four-screen, per
@@ -144,23 +157,33 @@ void load_rom(char const *filename, bool print_info) {
         // iNES assumes all carts have 8 KB of WRAM. For MMC5, assume the cart
         // has 64 KB.
         wram_8k_banks = (mapper == 5) ? 8 : 1;
-        fail_if(!(wram_6000_page = wram_base = alloc_array_init<uint8_t>(0x2000*wram_8k_banks, 0xFF)),
-                "failed to allocate %u KB of WRAM", 8*wram_8k_banks);
+        if(!(wram_6000_page = wram_base = alloc_array_init<uint8_t>(0x2000*wram_8k_banks, 0xFF))) {
+            printf("failed to allocate %u KB of WRAM", 8*wram_8k_banks);
+            exit(1);
+        }
     }
 
     if ((chr_is_ram = (chr_8k_banks == 0))) {
         // Assume cart has 8 KB of CHR RAM, except for Videomation which has 16 KB
         chr_8k_banks = (mapper == 13) ? 2 : 1;
-        fail_if(!(chr_base = alloc_array_init<uint8_t>(0x2000*chr_8k_banks, 0xFF)),
-                "failed to allocate %u KB of CHR RAM", 8*chr_8k_banks);
+        if(!(chr_base = alloc_array_init<uint8_t>(0x2000*chr_8k_banks, 0xFF))) {
+            printf("failed to allocate %u KB of CHR RAM", 8*chr_8k_banks);
+            exit(1);
+        }
     }
     else chr_base = prg_base + 16*1024*prg_16k_banks;
 
     #undef PRINT_INFO
 
-    fail_if(is_nes_2_0, "NES 2.0 not yet supported");
+    if(is_nes_2_0) {
+        printf("NES 2.0 not yet supported");
+        exit(1);
+    }
 
-    fail_if(!mapper_fns_table[mapper].init, "mapper %u not supported\n", mapper);
+    if(!mapper_fns_table[mapper].init) {
+        printf("mapper %u not supported\n", mapper);
+        exit(1);
+    }
 
     mapper_fns = mapper_fns_table[mapper];
     mapper_fns.init();
@@ -173,6 +196,8 @@ void load_rom(char const *filename, bool print_info) {
     init_audio_for_rom();
     init_ppu_for_rom();
     init_save_states_for_rom();
+
+    set_rom_loaded(true);
 }
 
 void unload_rom() {
@@ -187,6 +212,7 @@ void unload_rom() {
 
     deinit_audio_for_rom();
     deinit_save_states_for_rom();
+    set_rom_loaded(false);
 }
 
 // ROM detection from a PRG MD5 digest. Needed to infer and correct information
@@ -233,4 +259,12 @@ static void do_rom_specific_overrides() {
     else if (MEM_EQ(md5, "\x44\x6F\xCD\x30\x75\x61\x00\xA9\x94\x35\x9A\xD4\xC5\xF8\x76\x67"))
         // Rad Racer 2
         correct_mirroring(FOUR_SCREEN);
+}
+
+bool is_rom_loaded() {
+    return rom_loaded;
+}
+
+void set_rom_loaded(bool loaded) {
+    rom_loaded = loaded;
 }
